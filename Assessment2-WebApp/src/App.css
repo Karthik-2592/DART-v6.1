@@ -1,0 +1,384 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-primary: #0a0a0f;
+  --color-bg-secondary: #12121a;
+  --color-bg-card: #1a1a25;
+  --color-bg-card-hover: #222233;
+  --color-accent: #e91e8c;
+  --color-accent-light: #ff4db2;
+  --color-accent-dark: #b8156e;
+  --color-fg-primary: #f0f0f5;
+  --color-fg-secondary: #a0a0b5;
+  --color-fg-muted: #6a6a80;
+  --color-border: #2a2a3a;
+  --color-border-hover: #e91e8c;
+  --font-family-heading: "Outfit", sans-serif;
+  --font-family-body: "Inter", sans-serif;
+}
+
+/* ── Reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-body);
+  background-color: var(--color-bg-primary);
+  color: var(--color-fg-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-card);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-dark);
+}
+
+/* ── Section margins ── */
+.section-margins {
+  padding-left: clamp(1.5rem, 5vw, 6rem);
+  padding-right: clamp(1.5rem, 5vw, 6rem);
+}
+
+/* ── Content margins ── */
+.content-margins {
+  padding-left: clamp(2rem, 10vw, 15rem);
+  padding-right: clamp(2rem, 10vw, 15rem);
+}
+
+/* ── Scroll-driven animation helpers ── */
+.scroll-section {
+  opacity: 0.4;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+.scroll-section.in-view {
+  opacity: 1;
+  filter: brightness(1.05);
+}
+
+/* ── Entrance Animation ── */
+body.is-entering {
+  overflow: hidden; /* Prevent scrolling during entrance */
+}
+body.is-entering .hide-on-enter {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+body.has-entered .hide-on-enter {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Tracing outline animation for category cards ── */
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.card-trace {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-trace::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 4px;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--border-angle),
+    transparent 60%,
+    var(--card-theme-color, var(--color-accent)) 80%,
+    var(--card-theme-color, var(--color-accent-light)) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-trace:hover {
+  transform: scale(1.02);
+  border-color: transparent;
+  box-shadow: 0 0 20px var(--card-theme-glow, rgba(255, 255, 255, 0.15));
+}
+
+.card-trace:hover::before {
+  opacity: 1;
+  animation: traceRotate 2.5s linear infinite;
+}
+
+@keyframes traceRotate {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
+/* ── Carousel 3D tilt ── */
+.carousel-card {
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+}
+
+/* ── Glow effect ── */
+.glow-accent {
+  box-shadow: 0 0 40px rgba(233, 30, 140, 0.2), 0 0 80px rgba(233, 30, 140, 0.1);
+}
+
+/* ── Nav link hover ── */
+.nav-link {
+  position: relative;
+  color: var(--color-fg-secondary);
+  transition: color 0.3s ease;
+}
+.nav-link:hover {
+  color: var(--color-fg-primary);
+}
+.nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-accent);
+  transition: width 0.3s ease;
+}
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* ── Button styles ── */
+.btn-accent {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+  color: #fff;
+  font-weight: 600;
+  padding: 0.75rem 2rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-family: var(--font-family-body);
+}
+.btn-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(233, 30, 140, 0.35);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--color-accent);
+  font-weight: 500;
+  padding: 0.75rem 2rem;
+  border-radius: 50px;
+  border: 1.5px solid var(--color-accent);
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+  font-family: var(--font-family-body);
+}
+.btn-outline:hover {
+  background: var(--color-accent);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* ── Search bar ── */
+.search-bar-wrap {
+  position: relative;
+  width: 80%;
+  height: 72px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+}
+
+/* Radial wave rings */
+.search-bar-wrap::before,
+.search-bar-wrap::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--color-accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.search-bar-wrap::after {
+  inset: -18px;
+  border-width: 1px;
+}
+
+/* Hover – soft pulse */
+.search-bar-wrap:hover::before {
+  opacity: 0.25;
+  animation: searchWavePulse 1.8s ease-in-out infinite;
+}
+.search-bar-wrap:hover::after {
+  opacity: 0.15;
+  animation: searchWavePulse 1.8s ease-in-out 0.3s infinite;
+}
+
+/* Focus – stronger pulse */
+.search-bar-wrap--focused::before {
+  opacity: 0.55 !important;
+  animation: searchWavePulse 1.2s ease-in-out infinite !important;
+}
+.search-bar-wrap--focused::after {
+  opacity: 0.35 !important;
+  animation: searchWavePulse 1.2s ease-in-out 0.2s infinite !important;
+}
+
+@keyframes searchWavePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: inherit;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.08;
+  }
+}
+
+.search-bar-input {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-bg-card);
+  color: var(--color-fg-primary);
+  font-family: var(--font-family-body);
+  font-size: 1rem;
+  text-align: center;
+  padding: 0 2rem;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.search-bar-input::placeholder {
+  color: var(--color-fg-muted);
+  text-align: center;
+}
+
+.search-bar-input:hover {
+  border-color: var(--color-accent-dark);
+}
+
+.search-bar-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 20px rgba(233, 30, 140, 0.15);
+  background: var(--color-bg-card-hover);
+}
+
+/* ── Player button hover ── */
+.player-btn {
+  transition: filter 0.2s ease, transform 0.2s ease, border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+}
+.player-btn:hover {
+  filter: brightness(1.25);
+  transform: scale(1.08);
+}
+
+/* ── Queue card glow ── */
+.queue-card {
+  border: 1.5px solid transparent;
+  transform-style: preserve-3d;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease-out;
+}
+.queue-card:hover {
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 12px rgba(233, 30, 140, 0.35),
+    0 0 28px rgba(233, 30, 140, 0.15);
+}
+
+/* ── Range slider (volume, settings) ── */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(233, 30, 140, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 10px rgba(233, 30, 140, 0.5);
+}
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(233, 30, 140, 0.3);
+}
+
+/* ── Track action buttons ── */
+.track-action-btn {
+  transition: filter 0.2s ease, transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.track-action-btn:hover {
+  filter: brightness(1.15);
+  transform: scale(1.08);
+}
