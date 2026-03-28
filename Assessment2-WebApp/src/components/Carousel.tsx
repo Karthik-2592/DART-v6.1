@@ -9,7 +9,7 @@ export default function Carousel() {
   const [songs, setSongs] = useState<Song[]>([]);
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     fetch("http://localhost:5000/songs")
@@ -23,6 +23,14 @@ export default function Carousel() {
       .catch((err) => console.error("Carousel fetch error:", err));
   }, []);
 
+  useEffect(() => {
+    if (songs.length > 0 && sectionRef.current) {
+      gsap.fromTo(sectionRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+      );
+    }
+  }, [songs]);
   const handlePrev = useCallback(() => {
     if (songs.length === 0) return;
     const next = activeIndex === 0 ? songs.length - 1 : activeIndex - 1;
@@ -85,28 +93,21 @@ export default function Carousel() {
 
   if (songs.length === 0) {
     return (
-      <section className="section-margins scroll-section text-fg-primary pt-12 pb-24">
-        <h2 className="text-2xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-12">
-          🔥 Featured
-        </h2>
-        <div className="flex items-center justify-center gap-24 h-160 opacity-50">
-          Loading featured tracks...
-        </div>
+      <section className="section-margins scroll-section text-fg-primary pt-12 pb-24 opacity-0">
+        <div className="h-160" />
       </section>
     );
   }
 
   const current = songs[activeIndex];
   const theme = getGenreTheme(current.genre);
-
   return (
-    <section className="section-margins scroll-section text-fg-primary pt-3 pb-24">
+    <section ref={sectionRef} className="section-margins scroll-section text-fg-primary pt-3 pb-24 opacity-0">
       <h2 className="text-2xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-21">
         🔥 Featured
       </h2>
 
       <div
-        ref={containerRef}
         className="flex items-center justify-center gap-24 h-160"
       >
         {/* Left arrow */}
@@ -179,7 +180,7 @@ export default function Carousel() {
 
             {/* 4. Major Genre and 5. Release year */}
             <div className="flex flex-row items-center gap-4 mt-auto">
-              <span 
+              <span
                 className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider"
                 style={{ backgroundColor: `${theme.color}22`, color: theme.color, border: `1px solid ${theme.color}44` }}
               >
@@ -216,11 +217,10 @@ export default function Carousel() {
           <button
             key={card.id || index}
             onClick={() => handleDotClick(index)}
-            className={`rounded-full transition-all duration-400 cursor-pointer border-none ${
-              index === activeIndex
+            className={`rounded-full transition-all duration-400 cursor-pointer border-none ${index === activeIndex
                 ? "w-8 h-3"
                 : "w-3 h-3 bg-fg-muted/40 hover:bg-fg-muted"
-            }`}
+              }`}
             style={index === activeIndex ? { backgroundColor: theme.color, boxShadow: `0 0 10px ${theme.glow}` } : {}}
             aria-label={`Go to slide ${index + 1}`}
           />

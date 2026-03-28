@@ -3,39 +3,38 @@ import PlaybackControls from "./PlaybackControls";
 import { type Song } from "./Categories";
 
 // ── Constants ──
-const NUM_BARS = 64;
+const NUM_BARS = 72;
 const FFT_SIZE = 16384;
 const UPDATE_INTERVAL_MS = 50;
 
 // ── Normalization tuning ──
-const DECAY_RATE = 0.995;       // running-max decay per frame (~3 s half-life @ 60 fps)
+const DECAY_RATE = 0.997;       // running-max decay per frame (~3 s half-life @ 60 fps)
 const ATTACK_RATE = 0.7;        // how fast running-max rises to a new peak
 const CURVE_EXP = 5;          // gentler power curve (was 4)
-const LOCAL_WEIGHT = 0.6;      // blend: local Gaussian-zone vs global running-max
+const LOCAL_WEIGHT = 0.8;      // blend: local Gaussian-zone vs global running-max
 const GLOBAL_WEIGHT = 1 - LOCAL_WEIGHT;
 
 // ── Smoothing tuning ──
-const RISE_FACTOR = 0.18;       // bars grow quickly
-const FALL_FACTOR = 0.06;       // bars fall slowly
-const MAX_DELTA = 10;            // max change per frame (% of canvas)
+const RISE_FACTOR = 0.14;       // bars grow quickly
+const FALL_FACTOR = 0.04;       // bars fall slowly
+const MAX_DELTA = 8;            // max change per frame (% of canvas)
 
 // ── Peak detection tuning ──
 const MAX_PEAKS = 2;
-const MIN_PROMINENCE = 0.06;
+const MIN_PROMINENCE = 0.20;
 const SIGMA = 0.3;                // Gaussian influence radius (bar-index units)
 const TWO_SIGMA_SQ = 2 * SIGMA * SIGMA;
 
-// Pre-calculated bin ranges (0-based, end-exclusive) for 64 bars
+// Pre-calculated bin ranges (0-based, end-exclusive) for 96 bars
 const BIN_RANGES: [number, number][] = [
-  [7, 9], [9, 11], [11, 13], [13, 15], [15, 18], [18, 20], [20, 23],
-  [23, 26], [26, 30], [30, 34], [34, 38], [38, 43], [43, 48], [48, 54], [54, 60],
-  [60, 67], [67, 75], [75, 84], [84, 93], [93, 104], [104, 115], [115, 128], [128, 142],
-  [142, 157], [157, 174], [174, 192], [192, 212], [212, 234], [234, 258], [258, 285], [285, 314],
-  [314, 345], [345, 380], [380, 418], [418, 460], [460, 505], [505, 554], [554, 608], [608, 667],
-  [667, 732], [732, 802], [802, 878], [878, 962], [962, 1052], [1052, 1151], [1151, 1259], [1259, 1376],
-  [1376, 1504], [1504, 1643], [1643, 1794], [1794, 1958], [1958, 2137], [2137, 2331], [2331, 2542], [2542, 2771],
-  [2771, 3020], [3020, 3290], [3290, 3583], [3583, 3901], [3901, 4246], [4246, 4621], [4621, 5027], [5027, 5467],
-  [5467, 5944]
+  [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 16], [16, 17], [17, 19], 
+  [19, 21], [21, 23], [23, 25], [25, 27], [27, 30], [30, 33], [33, 36], [36, 40], [40, 43], [43, 48], 
+  [48, 52], [52, 57], [57, 63], [63, 69], [69, 76], [76, 83], [83, 91], [91, 100], [100, 110], [110, 120], 
+  [120, 132], [132, 145], [145, 159], [159, 175], [175, 192], [192, 210], [210, 231], [231, 253], [253, 278], [278, 305], 
+  [305, 334], [334, 367], [367, 403], [403, 442], [442, 485], [485, 532], [532, 584], [584, 640], [640, 703], [703, 771], 
+  [771, 846], [846, 928], [928, 1019], [1019, 1118], [1118, 1226], [1226, 1346], [1346, 1477], [1477, 1620], [1620, 1778], [1778, 1951], 
+  [1951, 2141], [2141, 2349], [2349, 2578], [2578, 2828], [2828, 3104], [3104, 3405], [3405, 3737], [3737, 4100], [4100, 4499], [4499, 4937], 
+  [4937, 5417], [5417, 5944]
 ];
 
 // Pre-compute Gaussian weight table (bar i → bar j contribution)
@@ -53,9 +52,9 @@ for (let center = 0; center < NUM_BARS; center++) {
 }
 
 // HSL hues for 64 bars (0 → 290)
-const redBars = Math.round(NUM_BARS * 0.08);
-const midBars = Math.round(NUM_BARS * 0.2);
-const highLBars = Math.round(NUM_BARS * 0.6);
+const redBars = Math.round(NUM_BARS * 0.15);
+const midBars = Math.round(NUM_BARS * 0.25);
+const highLBars = Math.round(NUM_BARS * 0.4);
 const highHBars = NUM_BARS -  redBars - midBars - highLBars;
 const BAR_HUES = [
   ...Array.from({ length: redBars }, (_, i) => Math.round((i / (redBars - 1)) * 20)),
@@ -67,10 +66,9 @@ const BAR_HUES = [
 // Frequency-band weights (damped extremes)
 const WEIGHTS = new Float32Array(NUM_BARS);
 for (let i = 0; i < NUM_BARS; i++) {
-  if (i < 4) WEIGHTS[i]= 0.7 + (i/4)*0.3
-  else if (i < 16) WEIGHTS[i] = 1 + (i / 16) * 0.1;
-  else if (i < 32) WEIGHTS[i] = 1.1 + (i / 32) * 0.1;
-  else if (i > 44) WEIGHTS[i] = 1.2 + ((i - 44) / 20) * 0.2;
+  if (i < 18) WEIGHTS[i]= 0.9 + (i/18)*0.2
+  else if (i < 36) WEIGHTS[i] = 1.1 + (i / 36) * 0.1;
+  else if (i > 60) WEIGHTS[i] = 1.2 + ((i - 60) / 12) * 0.2;
   else WEIGHTS[i] = 1.2;
 }
 
@@ -269,7 +267,7 @@ export default function Visualizer({ song }: { song?: Song }) {
       const lit = currentLightRef.current;
       const fillColor = `hsl(${hue}, ${sat}%, ${lit}%)`;
 
-      const barGap = 4;
+      const barGap = 3;
       const barWidth = Math.max(2, (width - barGap * (NUM_BARS - 1)) / NUM_BARS);
       const drawHeight = height - 10;
 

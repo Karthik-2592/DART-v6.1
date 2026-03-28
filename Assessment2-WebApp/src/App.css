@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 @theme {
   --color-bg-primary: #0a0a0f;
   --color-bg-secondary: #12121a;
@@ -37,6 +41,7 @@ body {
   min-height: 100vh;
 }
 
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-family-heading);
 }
@@ -69,7 +74,7 @@ h1, h2, h3, h4, h5, h6 {
   padding-right: clamp(2rem, 10vw, 15rem);
 }
 
-/* ── Scroll-driven animation helpers ── */
+/* ── Scroll-driven animation helpers ──
 .scroll-section {
   opacity: 0.4;
   transition: opacity 0.3s ease, filter 0.3s ease;
@@ -77,7 +82,7 @@ h1, h2, h3, h4, h5, h6 {
 .scroll-section.in-view {
   opacity: 1;
   filter: brightness(1.05);
-}
+} */
 
 /* ── Entrance Animation ── */
 body.is-entering {
@@ -113,17 +118,19 @@ body.has-entered .hide-on-enter {
 .card-trace {
   position: relative;
   border: 1px solid var(--color-border);
-  border-radius: 2px;
-  overflow: hidden;
+  border-radius: 4px; /* Slightly more rounded for premium feel */
+  /* Remove overflow: hidden to prevent clipping of the trace */
   transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  z-index: 1;
 }
 
 .card-trace::before {
   content: "";
   position: absolute;
-  inset: -1.5px;
-  border-radius: 4px;
-  padding: 1.5px;
+  /* Stronger outline: larger inset and padding */
+  inset: -2.5px;
+  border-radius: 6px;
+  padding: 2.5px;
   background: conic-gradient(
     from var(--border-angle),
     transparent 60%,
@@ -140,6 +147,8 @@ body.has-entered .hide-on-enter {
   mask-composite: exclude;
   opacity: 0;
   transition: opacity 0.3s ease;
+  z-index: 2; /* Ensure it stays on top */
+  pointer-events: none; /* Don't interfere with clicks */
 }
 
 .card-trace:hover {
@@ -381,4 +390,16 @@ body.has-entered .hide-on-enter {
 .track-action-btn:hover {
   filter: brightness(1.15);
   transform: scale(1.08);
+}
+
+/* ══════════════════════════════════════════════
+   Auth / Support page styles
+   ══════════════════════════════════════════════ */
+
+@keyframes authShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
 }

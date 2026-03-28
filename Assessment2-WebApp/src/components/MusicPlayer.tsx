@@ -18,13 +18,13 @@ export default function MusicPlayer() {
   const song = location.state?.song as Song | undefined;
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
     // Entrance animation classes
     document.body.classList.add("is-entering");
     document.body.classList.remove("has-entered");
 
-    // Same scroll-driven brightness as LandingPage
+    // Existing scroll-driven brightness animations
     const sections = document.querySelectorAll(".scroll-section");
 
     sections.forEach((section) => {
@@ -39,14 +39,62 @@ export default function MusicPlayer() {
             trigger: section,
             start: "top 85%",
             end: "bottom 15%",
-            scrub: true,
+            scrub: 1,
           },
         }
       );
     });
 
+    // --- New: Fullscreen + Viewport Top Auto-Hide Logic ---
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+    let isHidden = false;
+
+    const nav = document.querySelector("nav");
+    const queue = document.querySelector(".playlist-queue-container");
+
+    const animateVisibility = (show: boolean) => {
+      if (isHidden === !show) return;
+      isHidden = !show;
+
+      gsap.to([nav, queue], {
+        opacity: show ? 1 : 0,
+        duration: 0.5,
+        ease: "power2.inOut",
+        pointerEvents: show ? "auto" : "none",
+      });
+    };
+
+    const checkConditions = () => {
+      const isFullscreen = !!document.fullscreenElement;
+      const isAtTop = window.scrollY < 10;
+
+      if (isFullscreen && isAtTop) {
+        if (!hideTimer && !isHidden) {
+          hideTimer = setTimeout(() => {
+            animateVisibility(false);
+          }, 3000); // 3 seconds interval
+          nav?.classList.remove("hide-on-enter")
+        }
+      } else {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+        animateVisibility(true);
+      }
+    };
+
+    window.addEventListener("scroll", checkConditions);
+    document.addEventListener("fullscreenchange", checkConditions);
+
+    // Initial check
+    checkConditions();
+
     return () => {
       ScrollTrigger.getAll().forEach((t) => t.kill());
+      window.removeEventListener("scroll", checkConditions);
+      document.removeEventListener("fullscreenchange", checkConditions);
+      if (hideTimer) clearTimeout(hideTimer);
     };
   }, [song]);
 
@@ -55,8 +103,10 @@ export default function MusicPlayer() {
       <Navbar />
       <main className="pt-24 pb-20 space-y-10 content-margins">
         <Visualizer song={song} />
-        <PlaylistQueue />
-        <TrackDetails />
+        <div className="playlist-queue-container">
+          <PlaylistQueue />
+        </div>
+        <TrackDetails song={song} />
       </main>
       <DiscoverMore />
       <Footer />

@@ -12,14 +12,16 @@ import CallToAction from "./components/CallToAction";
 import Footer from "./components/Footer";
 import Placeholder from "./components/Placeholder";
 import MusicPlayer from "./components/MusicPlayer";
-
+import LoginPage from "./components/LoginPage";
+import RegisterPage from "./components/RegisterPage";
+import SupportPage from "./components/SupportPage";
+import ProfilePage from "./components/ProfilePage";
 
 gsap.registerPlugin(ScrollTrigger);
 
 function LandingPage() {
   useEffect(() => {
     const sections = document.querySelectorAll(".scroll-section");
-
     sections.forEach((section) => {
       gsap.fromTo(
         section,
@@ -32,12 +34,11 @@ function LandingPage() {
             trigger: section,
             start: "top 85%",
             end: "bottom 15%",
-            scrub: true,
+            scrub: 1,
           },
         }
       );
     });
-
     return () => {
       ScrollTrigger.getAll().forEach((t) => t.kill());
     };
@@ -56,17 +57,21 @@ function LandingPage() {
     </>
   );
 }
-
 function App() {
+
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/player" element={<MusicPlayer />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/support" element={<SupportPage />} />
+        <Route path="/profile/:username?" element={<ProfilePage />} />
         <Route path="*" element={<Placeholder />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
 export default App;

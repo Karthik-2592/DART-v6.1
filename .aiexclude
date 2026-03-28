@@ -1,0 +1,73 @@
+# ==========================================
+# Antigravity AI Exclusion File (.aiexclude)
+# ==========================================
+
+# 1. Version Control
+.git/
+.svn/
+
+# 2. Node.js / Frontend
+node_modules/
+dist/
+build/
+out/
+.next/
+.nuxt/
+coverage/
+*.min.js
+*.min.css
+yarn.lock
+pnpm-lock.yaml
+
+# 3. Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env/
+.pytest_cache/
+.tox/
+
+# 4. Compiled/Binary Directories (Java, C++, Rust, etc.)
+target/
+bin/
+obj/
+*.class
+*.o
+*.so
+*.dll
+*.exe
+
+# 5. Logs and Databases
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.sqlite
+*.sqlite3
+*.db
+
+# 6. Environment & Secrets (Crucial for Security)
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# 7. Heavy Media & Assets
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.ico
+*.svg
+*.mp4
+*.mp3
+*.wav
+*.pdf
+
+# 8. OS Generated Files
+.DS_Store
+Thumbs.db
+

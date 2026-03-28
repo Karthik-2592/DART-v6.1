@@ -17,6 +17,8 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
   const [isHoveringPlayer, setIsHoveringPlayer] = useState(false);
   const [isEntering, setIsEntering] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragTime, setDragTime] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const settingsRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
@@ -28,7 +30,8 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const displayedTime = isDragging ? dragTime : currentTime;
+  const progressPercent = duration > 0 ? (displayedTime / duration) * 100 : 0;
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -108,9 +111,15 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     if (isPlaying) {
       audio.pause();
     } else {
-      audio.play();
+      audio.play().then(() => {
+        // Increment global play count when playing starts
+        if (song?.title) {
+          fetch(`http://localhost:5000/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
+            .catch(err => console.error("Failed to increment play count:", err));
+        }
+      }).catch(e => console.log("Play failed:", e));
     }
-  }, [isPlaying]);
+  }, [isPlaying, song]);
 
   const handleRewind = useCallback(() => {
     if (audioRef.current) {
@@ -127,25 +136,35 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     }
   }, []);
 
-  const seekTo = useCallback((clientX: number) => {
+  const calculateTimeFromX = useCallback((clientX: number) => {
     const bar = progressBarRef.current?.parentElement;
-    if (!bar || duration === 0) return;
+    if (!bar || duration === 0) return 0;
     const rect = bar.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    if (audioRef.current) {
-      audioRef.current.currentTime = ratio * duration;
-    }
-  }, [duration, audioRef]);
+    return ratio * duration;
+  }, [duration]);
 
   const onMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
-    seekTo(e.clientX);
+    const newTime = calculateTimeFromX(e.clientX);
+    setDragTime(newTime);
   };
 
   useEffect(() => {
     if (!isDragging) return;
-    const onMouseMove = (e: MouseEvent) => seekTo(e.clientX);
-    const onMouseUp = () => setIsDragging(false);
+    
+    const onMouseMove = (e: MouseEvent) => {
+      const newTime = calculateTimeFromX(e.clientX);
+      setDragTime(newTime);
+    };
+
+    const onMouseUp = (e: MouseEvent) => {
+      const finalTime = calculateTimeFromX(e.clientX);
+      if (audioRef.current) {
+        audioRef.current.currentTime = finalTime;
+      }
+      setIsDragging(false);
+    };
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
@@ -153,7 +172,7 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [isDragging, seekTo]);
+  }, [isDragging, calculateTimeFromX, audioRef]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -167,6 +186,22 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     }
   }, [speed]);
 
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
   return (
     <section
       className="w-full"
@@ -179,7 +214,7 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
         {/* ── Progress bar ── */}
         <div className="flex items-center gap-3 mb-5">
           <span className="hide-on-enter text-xs text-fg-muted font-medium w-10 text-left tabular-nums">
-            {formatTime(currentTime)}
+            {formatTime(displayedTime)}
           </span>
           <div
             className="flex-1 cursor-pointer group h-8 flex items-center justify-center"
@@ -204,14 +239,30 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
             </div>
           </div>
           <span className="hide-on-enter text-xs text-fg-muted font-medium w-10 tabular-nums">
-            -{formatTime(duration - currentTime)}
+            -{formatTime(duration - displayedTime)}
           </span>
         </div>
 
         {/* ── Controls row ── */}
         <div className="flex items-center justify-between">
-          {/* Left spacer for symmetry */}
-          <div className="flex-1 hide-on-enter" />
+          {/* Left controls - Fullscreen Toggle */}
+          <div className="flex-1 hide-on-enter flex items-center justify-start">
+            <button
+              onClick={toggleFullscreen}
+              className="player-btn w-10 h-10 rounded-full bg-bg-card-hover border border-border flex items-center justify-center cursor-pointer group hover:border-accent/50 transition-all duration-300"
+              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreen ? (
+                <svg className="w-4 h-4 text-fg-secondary group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0l0 5m0-5l5 0M15 9l5-5m0 0l-5 0m5 0l0 5M9 15l-5 5m0 0l5 0m-5 0l0-5M15 15l5 5m0 0l0-5m0 5l-5 0" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-fg-secondary group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5M20 8V4m0 0h-4M20 4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              )}
+            </button>
+          </div>
 
           {/* Center controls */}
           <div className="flex items-center gap-5">

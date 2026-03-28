@@ -1,17 +1,32 @@
+import { type Song } from "./Categories";
 import { useState } from "react";
 
-const trackInfo = {
-  title: "Neon Pulse",
-  artist: "XYLO",
-  producer: "BeatCraft Studios",
-  album: "Electric Dreams",
-  year: 2025,
-  genres: ["EDM", "Future Bass", "Electronic"],
-};
-
-export default function TrackDetails() {
+export default function TrackDetails({ song }: { song?: Song }) {
   const [liked, setLiked] = useState(false);
   const [favorited, setFavorited] = useState(false);
+
+  const handleFavorite = async () => {
+    const userData = sessionStorage.getItem("soundshare_user");
+    if (!userData) {
+      console.warn("Please log in to favorite songs!");
+      return;
+    }
+
+    if (!song) return;
+
+    const user = JSON.parse(userData);
+    const method = favorited ? "DELETE" : "POST";
+    const url = `http://localhost:5000/favorites?username=${user.username}&title=${encodeURIComponent(song.title)}`;
+
+    try {
+      const res = await fetch(url, { method });
+      if (res.ok) {
+        setFavorited(!favorited);
+      }
+    } catch (err) {
+      console.error("Favorite action failed:", err);
+    }
+  };
 
   return (
     <section className="hide-on-enter w-full mx-auto ">
@@ -21,45 +36,32 @@ export default function TrackDetails() {
           <div className="flex-1 space-y-5">
             <div>
               <h2 className="text-3xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-1">
-                {trackInfo.title}
+                {song?.title || "Unknown Track"}
               </h2>
               <p className="text-fg-secondary text-base">
                 by{" "}
                 <span className="text-accent font-medium">
-                  {trackInfo.artist}
+                  {song?.artists || "Unknown Artist"}
                 </span>
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-x-12 gap-y-3 text-sm">
               <div>
-                <span className="text-fg-muted">Producer</span>
-                <p className="text-fg-primary font-medium">
-                  {trackInfo.producer}
-                </p>
-              </div>
-              <div>
-                <span className="text-fg-muted">Album</span>
-                <p className="text-fg-primary font-medium">
-                  {trackInfo.album}
-                </p>
-              </div>
-              <div>
                 <span className="text-fg-muted">Release Year</span>
-                <p className="text-fg-primary font-medium">{trackInfo.year}</p>
+                <p className="text-fg-primary font-medium">{song?.release_year || "Unknown"}</p>
               </div>
             </div>
 
             {/* Genre tags */}
             <div className="flex items-center gap-2 flex-wrap">
-              {trackInfo.genres.map((genre) => (
+              {song?.genre && (
                 <span
-                  key={genre}
                   className="px-3 py-1 rounded-full text-xs font-medium bg-accent/15 text-accent border border-accent/20"
                 >
-                  {genre}
+                  {song.genre}
                 </span>
-              ))}
+              )}
             </div>
           </div>
 
@@ -92,7 +94,7 @@ export default function TrackDetails() {
 
             {/* Favourite */}
             <button
-              onClick={() => setFavorited((f) => !f)}
+              onClick={handleFavorite}
               className={`track-action-btn w-11 h-11 rounded-full border flex items-center justify-center cursor-pointer transition-all duration-200 ${
                 favorited
                   ? "bg-yellow-500/15 border-yellow-500 text-yellow-400"

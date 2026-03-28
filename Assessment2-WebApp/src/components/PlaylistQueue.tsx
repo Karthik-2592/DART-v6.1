@@ -96,7 +96,7 @@ export default function PlaylistQueue() {
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                     onClick={() => navigate("/player", { state: { song: card } })}
-                    className="queue-card relative shrink-0 w-[calc(50%-1rem)] h-48 bg-bg-card rounded-[4px] flex flex-row items-stretch cursor-pointer border border-border transition-transform"
+                    className="queue-card relative shrink-0 w-[calc(50%-1rem)] h-68 bg-bg-card rounded-[4px] flex flex-row items-stretch cursor-pointer border border-border transition-transform"
                     style={{
                       "--card-theme-color": theme.color,
                       "--card-theme-glow": theme.glow,
