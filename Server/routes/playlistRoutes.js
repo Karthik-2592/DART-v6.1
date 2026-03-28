@@ -13,9 +13,14 @@ router.post('/', async (req, res) => {
     if (!userId) return res.status(404).json({ error: "Creator user not found" });
 
     const { name, description } = req.body;
+    console.log(`[PLAYLIST] Creating new playlist: "${name}" for creator: ${creator} (ID: ${userId})`);
     db.run(`INSERT INTO playlists (name, description, user_id) VALUES (?, ?, ?)`, [name, description, userId], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ id: this.lastrowid });
+        if (err) {
+            console.error(`[PLAYLIST] DB Error creating playlist "${name}": ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[PLAYLIST] Playlist "${name}" created successfully. ID: ${this.lastID}`);
+        res.status(201).json({ id: this.lastID });
     });
 });
 
@@ -86,8 +91,13 @@ router.put('/', async (req, res) => {
 
     if (updates.length > 0) {
         params.push(playlistId);
+        console.log(`[PLAYLIST] Updating metadata for playlist ID: ${playlistId} (${name} by ${creator}). Fields: ${updates.join(", ")}`);
         db.run(`UPDATE playlists SET ${updates.join(", ")} WHERE id = ?`, params, (err) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.error(`[PLAYLIST] DB Error updating playlist metadata: ${err.message}`);
+                return res.status(500).json({ error: err.message });
+            }
+            console.log(`[PLAYLIST] Playlist ID: ${playlistId} metadata updated successfully.`);
             res.json({ message: "Playlist updated successfully" });
         });
     } else {
@@ -101,13 +111,19 @@ router.delete('/', async (req, res) => {
     const playlistId = await resolvePlaylist(name, creator);
     if (!playlistId) return res.status(404).json({ error: "Playlist not found" });
 
+    console.log(`[PLAYLIST] Deleting playlist: "${name}" by ${creator} (ID: ${playlistId}) and all associated records.`);
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run(`DELETE FROM playlist_shares WHERE playlist_id = ?`, [playlistId]);
         db.run(`DELETE FROM playlist_songs WHERE playlist_id = ?`, [playlistId]);
         db.run(`DELETE FROM playlists WHERE id = ?`, [playlistId], function (err) {
-            if (err) { db.run("ROLLBACK"); return res.status(500).json({ error: err.message }); }
+            if (err) { 
+                console.error(`[PLAYLIST] DB Error during playlist deletion transaction: ${err.message}`);
+                db.run("ROLLBACK"); 
+                return res.status(500).json({ error: err.message }); 
+            }
             db.run("COMMIT");
+            console.log(`[PLAYLIST] Playlist ID: ${playlistId} and related data removed.`);
             res.json({ message: "Playlist and related data deleted successfully" });
         });
     });
@@ -124,8 +140,13 @@ router.post('/songs', async (req, res) => {
     const values = [];
     songIds.forEach(sid => values.push(playlistId, sid));
 
+    console.log(`[PLAYLIST] Adding ${songIds.length} song(s) to playlist ID: ${playlistId} ("${name}")`);
     db.run(`INSERT OR IGNORE INTO playlist_songs (playlist_id, song_id) VALUES ${placeholders}`, values, (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[PLAYLIST] DB Error adding songs to playlist ID: ${playlistId}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[PLAYLIST] Successfully added matching song(s) to playlist ID: ${playlistId}.`);
         res.json({ message: "Songs added to playlist" });
     });
 });
@@ -138,8 +159,13 @@ router.delete('/songs/:songTitle', async (req, res) => {
 
     if (!playlistId || !songId) return res.status(404).json({ error: "Playlist or song not found" });
 
+    console.log(`[PLAYLIST] Removing song Title: "${req.params.songTitle}" (ID: ${songId}) from playlist ID: ${playlistId} ("${name}")`);
     db.run(`DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?`, [playlistId, songId], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[PLAYLIST] DB Error removing song from playlist: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[PLAYLIST] Song removed from playlist ID: ${playlistId}.`);
         res.json({ message: "Song removed from playlist" });
     });
 });
@@ -175,8 +201,13 @@ router.post('/share/:targetUsername', async (req, res) => {
 
     if (!playlistId || !targetUserId) return res.status(404).json({ error: "Playlist or user not found" });
 
+    console.log(`[PLAYLIST] Sharing playlist ID: ${playlistId} ("${name}") with user: ${req.params.targetUsername} (ID: ${targetUserId})`);
     db.run(`INSERT OR IGNORE INTO playlist_shares (playlist_id, user_id) VALUES (?, ?)`, [playlistId, targetUserId], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[PLAYLIST] DB Error sharing playlist: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[PLAYLIST] Playlist ID: ${playlistId} now shared with user: ${req.params.targetUsername}.`);
         res.json({ message: "Playlist shared" });
     });
 });

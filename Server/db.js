@@ -18,9 +18,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 username TEXT NOT NULL UNIQUE,
                 password TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
-                display_name TEXT,
-                profile_picture TEXT,
-                description TEXT,
+                display_name TEXT DEFAULT 'New User',
+                profile_picture TEXT DEFAULT NULL,
+                description TEXT DEFAULT 'No bio provided.',
                 follower_count INTEGER DEFAULT 0,
                 following_count INTEGER DEFAULT 0
             )`);
@@ -33,7 +33,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 release_month INTEGER,
                 cover_path TEXT,
                 audio_path TEXT,
-                play_count INTEGER DEFAULT 0
+                play_count INTEGER DEFAULT 0,
+                favorite_count INTEGER DEFAULT 0
             )`);
 
             db.run(`CREATE TABLE IF NOT EXISTS song_contributors (
@@ -69,14 +70,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 FOREIGN KEY(song_id) REFERENCES songs(id)
             )`);
 
-            db.run(`CREATE TABLE IF NOT EXISTS song_play_counts (
-                song_id INTEGER,
-                year INTEGER,
-                month INTEGER,
-                play_count INTEGER DEFAULT 0,
-                PRIMARY KEY (song_id, year, month),
-                FOREIGN KEY(song_id) REFERENCES songs(id)
-            )`);
 
             db.run(`CREATE TABLE IF NOT EXISTS playlist_shares (
                 playlist_id INTEGER,

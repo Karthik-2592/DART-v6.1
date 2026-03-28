@@ -70,6 +70,7 @@ export default function RegisterPage() {
 
   const [displayNameErr, setDisplayNameErr] = useState<string | null>(null);
   const [avatarErr, setAvatarErr] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   /* ── Step management ── */
   const [step, setStep] = useState<1 | 2>(1);
@@ -125,31 +126,70 @@ export default function RegisterPage() {
       return;
     }
     setAvatarErr(null);
+    setAvatarFile(file);
     const reader = new FileReader();
     reader.onload = () => setAvatar(reader.result as string);
     reader.readAsDataURL(file);
   };
 
-  /* ── Step 2 submit ── */
-  const handleStep2 = (e: FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [globalErr, setGlobalErr] = useState<string | null>(null);
+
+  const handleStep2 = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const dErr = validateDisplayName(displayName);
     setDisplayNameErr(dErr);
+    setGlobalErr(null);
+
     if (dErr || avatarErr) return;
     if (description.length > 300) return;
 
-    /* Simulated registration */
-    sessionStorage.setItem(
-      "soundshare_user",
-      JSON.stringify({
-        username,
-        email,
-        displayName,
-        avatar: avatar !== DEFAULT_AVATAR ? avatar : null,
-        description,
-      })
-    );
-    navigate("/");
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("username", username);
+      formData.append("password", password);
+      formData.append("email", email);
+      if (displayName) formData.append("display_name", displayName);
+      if (description) formData.append("description", description);
+      if (avatarFile) formData.append("profile_picture", avatarFile);
+
+      const response = await fetch("http://localhost:5000/users/register", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          // Handle specific uniqueness errors
+          if (data.error?.toLowerCase().includes("username")) {
+            setStep(1);
+            setUsernameErr(data.error);
+          } else if (data.error?.toLowerCase().includes("email")) {
+            setStep(1);
+            setEmailErr(data.error);
+          } else {
+            setGlobalErr(data.error);
+          }
+        } else {
+          setGlobalErr(data.error || "Registration failed");
+        }
+        return;
+      }
+
+      /* Store result in sessionStorage */
+      sessionStorage.setItem("soundshare_user", JSON.stringify(data));
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      setGlobalErr("Connection error. Is the server running?");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -164,9 +204,11 @@ export default function RegisterPage() {
       >
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-1">
-          <div className="w-9 h-9 rounded-[10px] bg-white/15 flex items-center justify-center text-white font-bold text-base font-[var(--font-family-heading)]">
-            S
-          </div>
+          <img 
+            src="/logo.svg" 
+            alt="SoundShare Logo" 
+            className="w-9 h-9 object-contain [filter:brightness(0)_invert(1)]" 
+          />
           <span className="text-xl font-bold font-[var(--font-family-heading)] text-white">
             SoundShare
           </span>
@@ -425,10 +467,15 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0"
+                disabled={isSubmitting}
+                className="w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0 disabled:opacity-50 disabled:grayscale"
               >
-                Create Account
+                {isSubmitting ? "Creating Account..." : "Create Account"}
               </button>
+              
+              {globalErr && (
+                <p className="text-center text-[#ff4466] text-xs mt-4 animate-in fade-in duration-300">{globalErr}</p>
+              )}
             </form>
           )}
         </div>

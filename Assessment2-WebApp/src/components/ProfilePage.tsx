@@ -13,11 +13,11 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   
   const [activeTab, setActiveTab] = useState<Tab>("profile");
-  const [user, setUser] = useState<{ username: string; displayName: string } | null>({
-    username: "admin",
-    displayName: "Administrator"
+  const [user, setUser] = useState<{ username: string; displayName: string; description?: string; profile_picture?: string } | null>(() => {
+    const saved = sessionStorage.getItem("soundshare_user");
+    return saved ? JSON.parse(saved) : { username: "admin", displayName: "Administrator" };
   });
-  const [targetUser, setTargetUser] = useState<{ username: string; displayName: string } | null>(null);
+  const [targetUser, setTargetUser] = useState<{ username: string; displayName: string; description?: string; profile_picture?: string } | null>(null);
   const [isSelf, setIsSelf] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -37,13 +37,14 @@ export default function ProfilePage() {
   const [allFollowers, setAllFollowers] = useState<any[]>([]);
   const [allFollowing, setAllFollowing] = useState<any[]>([]);
   const [expandedPlaylistId, setExpandedPlaylistId] = useState<number | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const editModalRef = useRef<HTMLDivElement>(null);
   const editOverlayRef = useRef<HTMLDivElement>(null);
+  const profileFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loggedInUser = user;
-
     if (!paramUsername) {
       if (!loggedInUser) { navigate("/login"); return; }
       setTargetUser(loggedInUser);
@@ -54,10 +55,11 @@ export default function ProfilePage() {
       if (selfView) {
         setTargetUser(loggedInUser);
       } else {
-        setTargetUser({
-          username: paramUsername,
-          displayName: paramUsername.charAt(0).toUpperCase() + paramUsername.slice(1)
-        });
+        // Initial placeholder until fetch
+        setTargetUser(prev => (prev?.username === paramUsername ? prev : { 
+          username: paramUsername, 
+          displayName: paramUsername.charAt(0).toUpperCase() + paramUsername.slice(1) 
+        }));
       }
     }
   }, [paramUsername, navigate, user]);
@@ -75,32 +77,34 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!targetUser?.username) return;
 
-    fetch("http://localhost:5000/songs")
-      .then(res => res.json())
-      .then(data => setAllSongs(data || []))
-      .catch(err => console.error(err));
+    const fetchProfileData = async () => {
+      try {
+        const [profileRes, songsRes, uploadsRes, playlistsRes, followersRes, followingRes] = await Promise.all([
+          fetch(`http://localhost:5000/users?username=${targetUser.username}`).then(r => r.json()),
+          fetch("http://localhost:5000/songs").then(r => r.json()),
+          fetch(`http://localhost:5000/contributors/contributions?username=${targetUser.username}`).then(r => r.json()),
+          fetch(`http://localhost:5000/playlists/user/${targetUser.username}`).then(r => r.json()),
+          fetch(`http://localhost:5000/users/${targetUser.username}/followers`).then(r => r.json()),
+          fetch(`http://localhost:5000/users/${targetUser.username}/following`).then(r => r.json())
+        ]);
 
-    fetch(`http://localhost:5000/contributors/contributions?username=${targetUser.username}`)
-      .then(res => res.json())
-      .then(data => setUploadedSongs(data || []))
-      .catch(err => console.error(err));
-      
-    fetch(`http://localhost:5000/playlists/user/${targetUser.username}`)
-      .then(res => res.json())
-      .then(data => setPlaylists(data || []))
-      .catch(err => console.error(err));
-      
-    fetch(`http://localhost:5000/users/${targetUser.username}/followers`)
-      .then(res => res.json())
-      .then(data => setAllFollowers(data || []))
-      .catch(err => console.error(err));
-      
-    fetch(`http://localhost:5000/users/${targetUser.username}/following`)
-      .then(res => res.json())
-      .then(data => setAllFollowing(data || []))
-      .catch(err => console.error(err));
-      
-  }, [targetUser]);
+        if (profileRes && !profileRes.error) setTargetUser(profileRes);
+        setAllSongs(songsRes || []);
+        setUploadedSongs(uploadsRes || []);
+        setPlaylists(playlistsRes || []);
+        setAllFollowers(followersRes || []);
+        setAllFollowing(followingRes || []);
+        
+        if (user && followersRes && Array.isArray(followersRes)) {
+          setIsFollowing(followersRes.some((f: any) => f.username === user.username));
+        }
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+      }
+    };
+
+    fetchProfileData();
+  }, [targetUser?.username, user]);
 
   // Universal Modal Animation Handler
   useEffect(() => {
@@ -171,7 +175,11 @@ export default function ProfilePage() {
             {users.map((u) => (
               <Link key={u.username} to={`/profile/${u.username}`} className="flex flex-col items-center gap-3 group no-underline">
                 <div className="w-20 h-20 rounded-full border-2 border-white/5 group-hover:border-accent group-hover:scale-110 transition-all duration-300 p-0.5 overflow-hidden">
-                  <img src={`https://ui-avatars.com/api/?name=${u.username}&background=242435&color=fff&size=128`} className="w-full h-full rounded-full object-cover" alt="" />
+                  <img 
+                    src={u.profile_picture ? `http://localhost:5000/userData/${u.profile_picture}` : `https://ui-avatars.com/api/?name=${u.username}&background=242435&color=fff&size=128`} 
+                    className="w-full h-full rounded-full object-cover" 
+                    alt="" 
+                  />
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold text-white group-hover:text-accent transition-colors truncate w-24">{u.displayName}</p>
@@ -491,9 +499,14 @@ export default function ProfilePage() {
             <button onClick={closeModal} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-colors z-30">✕</button>
             <div className="shrink-0 h-full aspect-square bg-[#242435] border-r border-white/10 flex flex-col items-center justify-center p-12">
               <div className="w-48 h-48 rounded-full border-4 border-accent p-1 overflow-hidden group">
-                <img src={`https://ui-avatars.com/api/?name=${user?.username}&background=E91E8C&color=fff&size=256`} className="w-full h-full rounded-full object-cover" alt="" />
+                <img 
+                  src={user?.profile_picture ? `http://localhost:5000/userData/${user.profile_picture}` : `https://ui-avatars.com/api/?name=${user?.username}&background=E91E8C&color=fff&size=256`} 
+                  className="w-full h-full rounded-full object-cover" 
+                  alt="" 
+                />
               </div>
-              <button className="mt-8 px-6 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-accent transition-all">Change Avatar</button>
+              <input type="file" ref={profileFileRef} className="hidden" accept="image/*" />
+              <button onClick={() => profileFileRef.current?.click()} className="mt-8 px-6 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-white hover:bg-accent transition-all">Change Avatar</button>
             </div>
             <div className="flex-1 p-12 flex flex-col justify-center space-y-8">
               <h2 className="text-3xl font-bold text-white tracking-tight uppercase" style={{ fontVariant: "small-caps" }}>Refine Profile</h2>
@@ -514,13 +527,25 @@ export default function ProfilePage() {
                   const description = (document.getElementById('edit-bio') as HTMLTextAreaElement)?.value;
                   if (user?.username) {
                     try {
-                      await fetch(`http://localhost:5000/users?username=${user.username}`, {
+                      const formData = new FormData();
+                      if (displayName) formData.append("display_name", displayName);
+                      if (description) formData.append("description", description);
+                      if (profileFileRef.current?.files?.[0]) {
+                        formData.append("profile_picture", profileFileRef.current.files[0]);
+                      }
+
+                      const res = await fetch(`http://localhost:5000/users?username=${user.username}`, {
                         method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ display_name: displayName, description })
+                        body: formData
                       });
+                      const data = await res.json();
+                      
                       // Update local state to reflect changes
-                      if (displayName) setUser({ ...user, displayName });
+                      if (data.profile_picture || displayName) {
+                        const updated = { ...user, displayName: displayName || user.displayName, profile_picture: data.profile_picture || user.profile_picture };
+                        setUser(updated);
+                        sessionStorage.setItem("soundshare_user", JSON.stringify(updated));
+                      }
                     } catch (err) { console.error(err); }
                   }
                   closeModal(); 
@@ -577,22 +602,46 @@ export default function ProfilePage() {
             <div className="relative group">
               <div className="absolute inset-0 bg-accent blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity" />
               <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-gradient-to-tr from-accent to-accent-light p-1 shadow-2xl overflow-hidden relative z-10">
-                <img src={`https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=E91E8C&color=fff&size=256`} className="w-full h-full rounded-full object-cover" alt="" />
+                <img 
+                  src={targetUser?.profile_picture ? `http://localhost:5000/userData/${targetUser.profile_picture}` : `https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=E91E8C&color=fff&size=256`} 
+                  className="w-full h-full rounded-full object-cover" 
+                  alt="" 
+                />
               </div>
             </div>
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{targetUser?.displayName || "User"}</h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">{targetUser?.displayName || targetUser?.username || "User"}</h1>
                 <div className="px-3 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[0.6rem] font-bold uppercase tracking-widest transition-all">Pro</div>
               </div>
-              <p className="text-fg-secondary"><span className="text-accent/60">@</span>{targetUser?.username || "user"}</p>
+              <p className="text-fg-secondary mb-3"><span className="text-accent/60">@</span>{targetUser?.username || "user"}</p>
+              <p className="text-sm text-fg-muted max-w-md mx-auto md:mx-0 line-clamp-2 italic">
+                {targetUser?.description || "No bio provided."}
+              </p>
             </div>
             <div className="flex gap-4">
               {isSelf && (
                 <button onClick={() => setModal({ mode: "edit-profile" })} className="px-6 py-2.5 rounded-full bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 transition-all">Edit Profile</button>
               )}
               {!isSelf && (
-                <button className="px-10 py-2.5 rounded-full bg-accent text-white font-bold text-sm hover:bg-accent-light transition-all shadow-lg flex items-center gap-2">Follow</button>
+                <button 
+                  onClick={async () => {
+                    if (!user) return navigate("/login");
+                    try {
+                      const method = isFollowing ? "DELETE" : "POST";
+                      const res = await fetch(`http://localhost:5000/users/${user.username}/follow/${targetUser?.username}`, { method });
+                      if (res.ok) {
+                        setIsFollowing(!isFollowing);
+                        // Refresh followers list
+                        const updateRes = await fetch(`http://localhost:5000/users/${targetUser?.username}/followers`).then(r => r.json());
+                        setAllFollowers(updateRes || []);
+                      }
+                    } catch (err) { console.error(err); }
+                  }}
+                  className={`px-10 py-2.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center gap-2 ${isFollowing ? "bg-white/5 border border-white/10 text-white hover:bg-red-500/10 hover:text-red-500 hover:border-red-500/20" : "bg-accent text-white hover:bg-accent-light"}`}
+                >
+                  {isFollowing ? "Unfollow" : "Follow"}
+                </button>
               )}
             </div>
           </div>

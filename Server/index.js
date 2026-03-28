@@ -23,13 +23,14 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files from storage directory
-app.use("/storage", express.static(path.join(__dirname, "storage"), {
+app.use("/Storage", express.static(path.join(__dirname, "Storage"), {
     setHeaders: (res) => {
         res.setHeader("Access-Control-Allow-Origin", "*");
     }
 }));
-app.use('/audio', express.static(path.join(__dirname, 'storage/audio')));
-app.use('/covers', express.static(path.join(__dirname, 'storage/covers')));
+app.use('/audio', express.static(path.join(__dirname, 'Storage/audio')));
+app.use('/covers', express.static(path.join(__dirname, 'Storage/covers')));
+app.use('/userData', express.static(path.join(__dirname, 'Storage/userData')));
 
 // Register modular routes
 app.use("/users", userRoutes);

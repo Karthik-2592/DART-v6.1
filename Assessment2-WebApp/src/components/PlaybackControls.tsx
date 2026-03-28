@@ -63,6 +63,26 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     };
   }, []);
 
+  const incrementPlayCount = useCallback(() => {
+    if (!song?.title) return;
+    
+    // 1. Global play count
+    fetch(`http://localhost:5000/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
+      .catch(err => console.error("Failed to increment global play count:", err));
+
+    // 2. User-specific play count (if logged in)
+    const saved = sessionStorage.getItem("soundshare_user");
+    if (saved) {
+      try {
+        const user = JSON.parse(saved);
+        if (user.username) {
+          fetch(`http://localhost:5000/favorites/play?username=${encodeURIComponent(user.username)}&title=${encodeURIComponent(song.title)}`, { method: "POST" })
+            .catch(err => console.error("Failed to increment user play count:", err));
+        }
+      } catch (e) { console.error("Error parsing user for play tracking:", e); }
+    }
+  }, [song]);
+
   // Entrance Animation & Autoplay on song change
   useEffect(() => {
     if (!progressBarRef.current) return;
@@ -84,12 +104,14 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
           if (audio) {
             // Autoplay on load
             audio.currentTime = 0;
-            audio.play().catch(e => console.log("Autoplay prevented:", e));
+            audio.play()
+              .then(() => incrementPlayCount())
+              .catch(e => console.log("Autoplay prevented:", e));
           }
         },
       }
     );
-  }, [song, audioRef]);
+  }, [song, audioRef, incrementPlayCount]);
 
   // Close settings when clicking outside
   useEffect(() => {
@@ -112,14 +134,10 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
       audio.pause();
     } else {
       audio.play().then(() => {
-        // Increment global play count when playing starts
-        if (song?.title) {
-          fetch(`http://localhost:5000/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
-            .catch(err => console.error("Failed to increment play count:", err));
-        }
+        incrementPlayCount();
       }).catch(e => console.log("Play failed:", e));
     }
-  }, [isPlaying, song]);
+  }, [isPlaying, incrementPlayCount]);
 
   const handleRewind = useCallback(() => {
     if (audioRef.current) {

@@ -5,7 +5,7 @@ import gsap from "gsap";
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [user] = useState<{ username: string; displayName: string } | null>(() => {
+  const [user] = useState<{ username: string; displayName: string; profile_picture?: string } | null>(() => {
     const saved = sessionStorage.getItem("soundshare_user");
     return saved ? JSON.parse(saved) : null;
   });
@@ -59,9 +59,11 @@ export default function Navbar() {
     <nav className="hide-on-enter fixed top-0 left-0 w-full z-50 flex items-center justify-between px-12 py-1 bg-white/5 backdrop-blur-md border-b border-white/10">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 no-underline group">
-        <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-lg font-[var(--font-family-heading)] transition-all group-hover:bg-accent group-hover:scale-110">
-          S
-        </div>
+        <img 
+          src="/logo.svg" 
+          alt="SoundShare Logo" 
+          className="w-10 h-10 object-contain transition-all group-hover:scale-110 [filter:brightness(0)_invert(1)]"
+        />
         <span className="text-xl font-bold font-[var(--font-family-heading)] text-white group-hover:text-accent-light transition-colors">
           SoundShare
         </span>
@@ -96,7 +98,7 @@ export default function Navbar() {
             >
               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-accent-light flex items-center justify-center text-white border-2 border-white/20 shadow-lg overflow-hidden">
                 <img 
-                  src={`https://ui-avatars.com/api/?name=${user.username}&background=E91E8C&color=fff&size=128`} 
+                  src={user.profile_picture ? `http://localhost:5000/userData/${user.profile_picture}` : `https://ui-avatars.com/api/?name=${user.username}&background=E91E8C&color=fff&size=128`} 
                   alt="avatar" 
                   className="w-full h-full object-cover"
                 />

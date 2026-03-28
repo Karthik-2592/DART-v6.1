@@ -13,10 +13,23 @@ router.post('/', async (req, res) => {
     if (!userId) return res.status(404).json({ error: "User not found" });
     if (!songId) return res.status(404).json({ error: "Song not found" });
 
-    const query = `INSERT OR IGNORE INTO favorites (user_id, song_id) VALUES (?, ?)`;
-    db.run(query, [userId, songId], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.status(201).json({ message: "Song favorited" });
+    console.log(`[FAVORITE] User "${username}" (ID: ${userId}) favoriting song: "${title}" (ID: ${songId})`);
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run(`INSERT OR IGNORE INTO favorites (user_id, song_id) VALUES (?, ?)`, [userId, songId], function (err) {
+            if (err) {
+                console.error(`[FAVORITE] DB Error favoriting song: ${err.message}`);
+                db.run("ROLLBACK");
+                return res.status(500).json({ error: err.message });
+            }
+            if (this.changes > 0) {
+                console.log(`[FAVORITE] New relationship created. Incrementing global favorite_count for song ID: ${songId}...`);
+                db.run(`UPDATE songs SET favorite_count = favorite_count + 1 WHERE id = ?`, [songId]);
+            }
+            db.run("COMMIT");
+            console.log(`[FAVORITE] Transaction complete. Song "${title}" favorited.`);
+            res.status(201).json({ message: "Song favorited" });
+        });
     });
 });
 
@@ -29,10 +42,23 @@ router.delete('/', async (req, res) => {
     if (!userId) return res.status(404).json({ error: "User not found" });
     if (!songId) return res.status(404).json({ error: "Song not found" });
 
-    const query = `DELETE FROM favorites WHERE user_id = ? AND song_id = ?`;
-    db.run(query, [userId, songId], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Favorite removed" });
+    console.log(`[FAVORITE] User "${username}" (ID: ${userId}) unfavoriting song: "${title}" (ID: ${songId})`);
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        db.run(`DELETE FROM favorites WHERE user_id = ? AND song_id = ?`, [userId, songId], function (err) {
+            if (err) {
+                console.error(`[FAVORITE] DB Error removing favorite: ${err.message}`);
+                db.run("ROLLBACK");
+                return res.status(500).json({ error: err.message });
+            }
+            if (this.changes > 0) {
+                console.log(`[FAVORITE] Relationship removed. Decrementing global favorite_count for song ID: ${songId}...`);
+                db.run(`UPDATE songs SET favorite_count = MAX(0, favorite_count - 1) WHERE id = ?`, [songId]);
+            }
+            db.run("COMMIT");
+            console.log(`[FAVORITE] Transaction complete. Song "${title}" unfavorited.`);
+            res.json({ message: "Favorite removed" });
+        });
     });
 });
 
@@ -61,8 +87,17 @@ router.post('/play', async (req, res) => {
 
     const query = `UPDATE favorites SET user_play_count = user_play_count + 1 WHERE user_id = ? AND song_id = ?`;
     db.run(query, [userId, songId], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "User play count incremented" });
+        if (err) {
+            console.error(`[FAVORITE] DB Error incrementing user play count: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        if (this.changes > 0) {
+            console.log(`[FAVORITE] User-specific play count incremented for: ${username} on track: ${title}`);
+            res.json({ message: "User play count incremented" });
+        } else {
+            // Track not in favorites - skip logging and return no-op message
+            res.json({ message: "Track not in favorites, user-specific stats ignored." });
+        }
     });
 });
 
@@ -81,8 +116,13 @@ router.get('/user/:username', async (req, res) => {
         WHERE f.user_id = ?
         GROUP BY s.id
     `;
+    console.log(`[FAVORITE] Fetching all favorites for user: ${username} (ID: ${userId})`);
     db.all(query, [userId], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[FAVORITE] DB Error fetching favorites for ${username}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[FAVORITE] User "${username}" has ${rows.length} favorite songs.`);
         res.json(rows);
     });
 });

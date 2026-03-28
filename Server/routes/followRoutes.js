@@ -13,15 +13,22 @@ router.post('/:username/follow/:targetUsername', async (req, res) => {
 
     if (!followerId || !followingId) return res.status(404).json({ error: "Follower or followed user not found" });
 
+    console.log(`[FOLLOW] User ${req.params.username} (ID: ${followerId}) following ${req.params.targetUsername} (ID: ${followingId})`);
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run(`INSERT OR IGNORE INTO user_follows (follower_id, following_id) VALUES (?, ?)`, [followerId, followingId], function(err) {
-            if (err) { db.run("ROLLBACK"); return res.status(500).json({ error: err.message }); }
+            if (err) { 
+                console.error(`[FOLLOW] DB Error during follow transaction: ${err.message}`);
+                db.run("ROLLBACK"); 
+                return res.status(500).json({ error: err.message }); 
+            }
             if (this.changes > 0) {
+                console.log(`[FOLLOW] Relationship established. Updating connection counts...`);
                 db.run(`UPDATE users SET following_count = following_count + 1 WHERE id = ?`, [followerId]);
                 db.run(`UPDATE users SET follower_count = follower_count + 1 WHERE id = ?`, [followingId]);
             }
             db.run("COMMIT");
+            console.log(`[FOLLOW] Transaction committed successfully.`);
             res.json({ message: "Followed successfully" });
         });
     });
@@ -36,15 +43,22 @@ router.delete('/:username/follow/:targetUsername', async (req, res) => {
 
     if (!followerId || !followingId) return res.status(404).json({ error: "Follower or followed user not found" });
 
+    console.log(`[FOLLOW] User ${req.params.username} (ID: ${followerId}) unfollowing ${req.params.targetUsername} (ID: ${followingId})`);
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run(`DELETE FROM user_follows WHERE follower_id = ? AND following_id = ?`, [followerId, followingId], function(err) {
-            if (err) { db.run("ROLLBACK"); return res.status(500).json({ error: err.message }); }
+            if (err) { 
+                console.error(`[FOLLOW] DB Error during unfollow transaction: ${err.message}`);
+                db.run("ROLLBACK"); 
+                return res.status(500).json({ error: err.message }); 
+            }
             if (this.changes > 0) {
+                console.log(`[FOLLOW] Relationship removed. Updating connection counts...`);
                 db.run(`UPDATE users SET following_count = MAX(0, following_count - 1) WHERE id = ?`, [followerId]);
                 db.run(`UPDATE users SET follower_count = MAX(0, follower_count - 1) WHERE id = ?`, [followingId]);
             }
             db.run("COMMIT");
+            console.log(`[FOLLOW] Unfollow transaction committed.`);
             res.json({ message: "Unfollowed successfully" });
         });
     });
@@ -61,8 +75,13 @@ router.get('/:username/followers', async (req, res) => {
         JOIN user_follows uf ON u.id = uf.follower_id
         WHERE uf.following_id = ?
     `;
+    console.log(`[FOLLOW] Listing followers for user: ${req.params.username} (ID: ${userId})`);
     db.all(query, [userId], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[FOLLOW] DB Error fetching followers for ${req.params.username}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[FOLLOW] User ${req.params.username} has ${rows.length} followers.`);
         res.json(rows);
     });
 });
@@ -78,8 +97,13 @@ router.get('/:username/following', async (req, res) => {
         JOIN user_follows uf ON u.id = uf.following_id
         WHERE uf.follower_id = ?
     `;
+    console.log(`[FOLLOW] Listing following for user: ${req.params.username} (ID: ${userId})`);
     db.all(query, [userId], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[FOLLOW] DB Error fetching following for ${req.params.username}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[FOLLOW] User ${req.params.username} is following ${rows.length} users.`);
         res.json(rows);
     });
 });

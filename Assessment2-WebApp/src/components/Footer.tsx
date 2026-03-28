@@ -8,9 +8,11 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-sm font-[var(--font-family-heading)]">
-                S
-              </div>
+              <img 
+                src="/logo.svg" 
+                alt="SoundShare Logo" 
+                className="w-8 h-8 object-contain [filter:brightness(0)_invert(1)]" 
+              />
               <span className="text-lg font-bold font-[var(--font-family-heading)] text-white">
                 SoundShare
               </span>

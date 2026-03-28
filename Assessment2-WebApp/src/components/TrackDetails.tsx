@@ -1,30 +1,55 @@
 import { type Song } from "./Categories";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function TrackDetails({ song }: { song?: Song }) {
-  const [liked, setLiked] = useState(false);
   const [favorited, setFavorited] = useState(false);
+
+  // Sync favorited status from backend on load
+  useEffect(() => {
+    const userData = sessionStorage.getItem("soundshare_user");
+    if (userData && song) {
+      const user = JSON.parse(userData);
+      fetch(`http://localhost:5000/favorites/user/${user.username}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setFavorited(data.some((fav: any) => fav.title === song.title));
+          }
+        })
+        .catch(err => console.error("Error fetching favorite status:", err));
+    } else {
+      setFavorited(false);
+    }
+  }, [song]);
 
   const handleFavorite = async () => {
     const userData = sessionStorage.getItem("soundshare_user");
+    
+    // Toggle state visually for both guest and logged-in
+    const nextState = !favorited;
+    setFavorited(nextState);
+
     if (!userData) {
-      console.warn("Please log in to favorite songs!");
+      console.log("[TRACK] Guest user toggled favorite visually.");
       return;
     }
 
     if (!song) return;
 
     const user = JSON.parse(userData);
-    const method = favorited ? "DELETE" : "POST";
+    const method = nextState ? "POST" : "DELETE";
     const url = `http://localhost:5000/favorites?username=${user.username}&title=${encodeURIComponent(song.title)}`;
 
     try {
       const res = await fetch(url, { method });
-      if (res.ok) {
-        setFavorited(!favorited);
+      if (!res.ok) {
+         // Revert if API fail
+         setFavorited(!nextState);
+         console.error("Favorite API call failed");
       }
     } catch (err) {
-      console.error("Favorite action failed:", err);
+      setFavorited(!nextState);
+      console.error("Favorite action critical failure:", err);
     }
   };
 
@@ -67,38 +92,13 @@ export default function TrackDetails({ song }: { song?: Song }) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-3 pt-2">
-            {/* Like */}
-            <button
-              onClick={() => setLiked((l) => !l)}
-              className={`track-action-btn w-11 h-11 rounded-full border flex items-center justify-center cursor-pointer transition-all duration-200 ${
-                liked
-                  ? "bg-accent/15 border-accent text-accent"
-                  : "bg-bg-card-hover border-border text-fg-secondary hover:text-accent hover:border-accent/40"
-              }`}
-              title="Like"
-            >
-              <svg
-                className="w-5 h-5"
-                fill={liked ? "currentColor" : "none"}
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </button>
-
-            {/* Favourite */}
+            {/* Favourite (Heart) */}
             <button
               onClick={handleFavorite}
               className={`track-action-btn w-11 h-11 rounded-full border flex items-center justify-center cursor-pointer transition-all duration-200 ${
                 favorited
-                  ? "bg-yellow-500/15 border-yellow-500 text-yellow-400"
-                  : "bg-bg-card-hover border-border text-fg-secondary hover:text-yellow-400 hover:border-yellow-400/40"
+                  ? "bg-accent/15 border-accent text-accent"
+                  : "bg-bg-card-hover border-border text-fg-secondary hover:text-accent hover:border-accent/40"
               }`}
               title="Favourite"
             >
@@ -112,7 +112,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                 />
               </svg>
             </button>

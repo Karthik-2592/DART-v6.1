@@ -20,8 +20,13 @@ router.post('/contributors', async (req, res) => {
     userIds.forEach(uid => values.push(songId, uid));
 
     const query = `INSERT OR IGNORE INTO song_contributors (song_id, user_id) VALUES ${placeholders}`;
+    console.log(`[CONTRIBUTOR] Adding ${userIds.length} contributor(s) to track: ${title} (ID: ${songId})`);
     db.run(query, values, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[CONTRIBUTOR] DB Error adding contributors to ${title}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[CONTRIBUTOR] Successfully added ${this.changes} new contributor(s) to "${title}".`);
         res.json({ message: "Contributors added successfully", count: this.changes });
     });
 });
@@ -40,8 +45,13 @@ router.get('/contributors', async (req, res) => {
         JOIN song_contributors sc ON u.id = sc.user_id
         WHERE sc.song_id = ?
     `;
+    console.log(`[CONTRIBUTOR] Fetching contributor list for track: ${title} (ID: ${songId})`);
     db.all(query, [songId], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[CONTRIBUTOR] DB Error fetching contributors for ${title}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[CONTRIBUTOR] Found ${rows.length} contributor(s) for "${title}".`);
         res.json(rows);
     });
 });
@@ -63,8 +73,13 @@ router.get('/contributions', async (req, res) => {
         WHERE sc.user_id = ?
         GROUP BY s.id
     `;
+    console.log(`[CONTRIBUTOR] Fetching track contributions for user: ${username} (ID: ${userId})`);
     db.all(query, [userId], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[CONTRIBUTOR] DB Error fetching contributions for ${username}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[CONTRIBUTOR] Found ${rows.length} contributed track(s) for user "${username}".`);
         res.json(rows);
     });
 });

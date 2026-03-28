@@ -70,9 +70,9 @@ CREATE TABLE users (
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    display_name TEXT,
-    profile_picture TEXT,
-    description TEXT,
+    display_name TEXT DEFAULT 'New User',
+    profile_picture TEXT DEFAULT NULL,
+    description TEXT DEFAULT 'No bio provided.',
     follower_count INTEGER DEFAULT 0,
     following_count INTEGER DEFAULT 0
 );
@@ -87,7 +87,8 @@ CREATE TABLE songs (
     release_month INTEGER,
     cover_path TEXT,
     audio_path TEXT,
-    play_count INTEGER DEFAULT 0
+    play_count INTEGER DEFAULT 0,
+    favorite_count INTEGER DEFAULT 0
 );
 """)
 
@@ -132,16 +133,6 @@ CREATE TABLE playlist_songs (
 );
 """)
 
-cursor.execute("""
-CREATE TABLE song_play_counts (
-    song_id INTEGER,
-    year INTEGER,
-    month INTEGER,
-    play_count INTEGER DEFAULT 0,
-    PRIMARY KEY (song_id, year, month),
-    FOREIGN KEY(song_id) REFERENCES songs(id)
-);
-""")
 
 cursor.execute("""
 CREATE TABLE playlist_shares (

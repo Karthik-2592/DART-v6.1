@@ -17,8 +17,13 @@ router.get('/', (req, res) => {
             LEFT JOIN users u ON sc.user_id = u.id
             GROUP BY s.id
         `;
+        console.log(`[SONG] Listing all tracks...`);
         db.all(query, [], (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                console.error(`[SONG] DB Error listing all songs: ${err.message}`);
+                return res.status(500).json({ error: err.message });
+            }
+            console.log(`[SONG] Retrieved ${rows.length} total tracks.`);
             res.json(rows);
         });
         return;
@@ -33,8 +38,13 @@ router.get('/', (req, res) => {
         WHERE s.title = ?
         GROUP BY s.id
     `;
+    console.log(`[SONG] Looking up track by title: ${title}`);
     db.all(query, [title], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[SONG] DB Error looking up ${title}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[SONG] Found ${rows.length} matching result(s) for "${title}".`);
         res.json(rows);
     });
 });
@@ -90,8 +100,13 @@ router.post('/play', async (req, res) => {
     const songId = await resolveSong(title);
     if (!songId) return res.status(404).json({ error: "Song not found" });
 
+    console.log(`[SONG] Incrementing play count for: ${title} (ID: ${songId})`);
     db.run(`UPDATE songs SET play_count = play_count + 1 WHERE id = ?`, [songId], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[SONG] DB Error incrementing play count for ${title}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[SONG] Play count incremented for: ${title}`);
         res.json({ message: "Global play count incremented" });
     });
 });
@@ -119,8 +134,13 @@ router.put('/', async (req, res) => {
     params.push(songId);
     const query = `UPDATE songs SET ${updates.join(", ")} WHERE id = ?`;
     
+    console.log(`[SONG] Updating metadata for: ${title} (ID: ${songId}). Fields: ${updates.join(", ")}`);
     db.run(query, params, function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[SONG] DB Error updating ${title}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[SONG] Metadata updated for track: ${title}`);
         res.json({ message: "Song metadata updated successfully" });
     });
 });
@@ -130,10 +150,15 @@ router.post('/', (req, res) => {
     const { title, genre, release_year, release_month, cover_path, audio_path } = req.body;
     if (!title) return res.status(400).json({ error: "Title is required" });
 
+    console.log(`[SONG] Uploading new track: ${title}`);
     db.run(`INSERT INTO songs (title, genre, release_year, release_month, cover_path, audio_path) VALUES (?, ?, ?, ?, ?, ?)`, 
     [title, genre, release_year, release_month, cover_path, audio_path], 
     function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            console.error(`[SONG] DB Error uploading ${title}: ${err.message}`);
+            return res.status(500).json({ error: err.message });
+        }
+        console.log(`[SONG] Track successfully added! Title: ${title}, ID: ${this.lastID}`);
         res.status(201).json({ message: "Song uploaded successfully", id: this.lastID });
     });
 });

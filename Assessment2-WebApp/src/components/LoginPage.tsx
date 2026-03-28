@@ -32,20 +32,47 @@ export default function LoginPage() {
   const blurUsername = () => setUsernameErr(validateUsername(username));
   const blurPassword = () => setPasswordErr(validatePassword(password));
 
-  const handleSubmit = (e: FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [globalErr, setGlobalErr] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const uErr = validateUsername(username);
     const pErr = validatePassword(password);
     setUsernameErr(uErr);
     setPasswordErr(pErr);
+    setGlobalErr(null);
+
     if (uErr || pErr) return;
 
-    /* Simulated login — store in sessionStorage */
-    sessionStorage.setItem(
-      "soundshare_user",
-      JSON.stringify({ username, displayName: username })
-    );
-    navigate("/");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch("http://localhost:5000/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Trigger shaker for both fields if login fails
+        setUsernameErr(data.error || "Login failed");
+        setPasswordErr(data.error || "Login failed");
+        return;
+      }
+
+      /* Store result in sessionStorage */
+      sessionStorage.setItem("soundshare_user", JSON.stringify(data));
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      setGlobalErr("Connection error. Is the server running?");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   /* GSAP Entrance Animation */
@@ -82,9 +109,11 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-1">
-          <div className="w-9 h-9 rounded-[10px] bg-white/15 flex items-center justify-center text-white font-bold text-base font-[var(--font-family-heading)]">
-            S
-          </div>
+          <img 
+            src="/logo.svg" 
+            alt="SoundShare Logo" 
+            className="w-9 h-9 object-contain [filter:brightness(0)_invert(1)]" 
+          />
           <span className="text-xl font-bold font-[var(--font-family-heading)] text-white">
             SoundShare
           </span>
@@ -153,10 +182,15 @@ export default function LoginPage() {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className="w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
           >
-            Log In
+            {isSubmitting ? "Logging In..." : "Log In"}
           </button>
+          
+          {globalErr && (
+            <p className="text-center text-[#ff4466] text-xs mt-3 animate-in fade-in duration-300">{globalErr}</p>
+          )}
         </form>
       </div>
         <div className="flex flex-col items-center gap-2 mt-6 text-[0.85rem] text-fg-muted">
