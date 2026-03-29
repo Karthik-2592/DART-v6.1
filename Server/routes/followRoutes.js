@@ -24,12 +24,17 @@ router.post('/:username/follow/:targetUsername', async (req, res) => {
             }
             if (this.changes > 0) {
                 console.log(`[FOLLOW] Relationship established. Updating connection counts...`);
-                db.run(`UPDATE users SET following_count = following_count + 1 WHERE id = ?`, [followerId]);
-                db.run(`UPDATE users SET follower_count = follower_count + 1 WHERE id = ?`, [followingId]);
-            }
-            db.run("COMMIT");
-            console.log(`[FOLLOW] Transaction committed successfully.`);
-            res.json({ message: "Followed successfully" });
+            db.run(`UPDATE users SET following_count = following_count + 1 WHERE id = ?`, [followerId], (err) => {
+                if (err) console.error(`[FOLLOW] Error incrementing following_count for ${req.params.username}: ${err.message}`);
+            });
+            db.run(`UPDATE users SET follower_count = follower_count + 1 WHERE id = ?`, [followingId], (err) => {
+                if (err) console.error(`[FOLLOW] Error incrementing follower_count for ${req.params.targetUsername}: ${err.message}`);
+            });
+            db.run("COMMIT", () => {
+                console.log(`[FOLLOW] Transaction committed. User ${req.params.username} successfully followed ${req.params.targetUsername}.`);
+                res.json({ message: "Followed successfully" });
+            });
+        }
         });
     });
 });
@@ -54,12 +59,17 @@ router.delete('/:username/follow/:targetUsername', async (req, res) => {
             }
             if (this.changes > 0) {
                 console.log(`[FOLLOW] Relationship removed. Updating connection counts...`);
-                db.run(`UPDATE users SET following_count = MAX(0, following_count - 1) WHERE id = ?`, [followerId]);
-                db.run(`UPDATE users SET follower_count = MAX(0, follower_count - 1) WHERE id = ?`, [followingId]);
-            }
-            db.run("COMMIT");
-            console.log(`[FOLLOW] Unfollow transaction committed.`);
-            res.json({ message: "Unfollowed successfully" });
+            db.run(`UPDATE users SET following_count = MAX(0, following_count - 1) WHERE id = ?`, [followerId], (err) => {
+                if (err) console.error(`[FOLLOW] Error decrementing following_count for ${req.params.username}: ${err.message}`);
+            });
+            db.run(`UPDATE users SET follower_count = MAX(0, follower_count - 1) WHERE id = ?`, [followingId], (err) => {
+                if (err) console.error(`[FOLLOW] Error decrementing follower_count for ${req.params.targetUsername}: ${err.message}`);
+            });
+            db.run("COMMIT", () => {
+                console.log(`[FOLLOW] Unfollow transaction committed. User ${req.params.username} no longer following ${req.params.targetUsername}.`);
+                res.json({ message: "Unfollowed successfully" });
+            });
+        }
         });
     });
 });

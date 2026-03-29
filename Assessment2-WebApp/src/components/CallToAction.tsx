@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 export default function CallToAction() {
-  const [user, setUser] = useState<{ username: string; displayName: string } | null>(() => {
+  const [user] = useState<{ username: string; displayName: string } | null>(() => {
     const saved = sessionStorage.getItem("soundshare_user");
     return saved ? JSON.parse(saved) : null;
   });

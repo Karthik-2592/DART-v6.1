@@ -340,10 +340,10 @@ body.has-entered .hide-on-enter {
   transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease-out;
 }
 .queue-card:hover {
-  border-color: var(--color-accent);
+  border-color: var(--card-theme-color, var(--color-accent));
   box-shadow:
-    0 0 12px rgba(233, 30, 140, 0.35),
-    0 0 28px rgba(233, 30, 140, 0.15);
+    0 0 15px var(--card-theme-glow, rgba(233, 30, 140, 0.35)),
+    0 0 35px var(--card-theme-glow, rgba(233, 30, 140, 0.15));
 }
 
 /* ── Range slider (volume, settings) ── */

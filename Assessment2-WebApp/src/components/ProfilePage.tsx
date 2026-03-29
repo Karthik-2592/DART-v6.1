@@ -11,7 +11,7 @@ type Tab = "profile" | "uploads" | "playlists" | "accounts";
 export default function ProfilePage() {
   const { username: paramUsername } = useParams();
   const navigate = useNavigate();
-  
+
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [user, setUser] = useState<{ username: string; displayName: string; description?: string; profile_picture?: string } | null>(() => {
     const saved = sessionStorage.getItem("soundshare_user");
@@ -20,15 +20,75 @@ export default function ProfilePage() {
   const [targetUser, setTargetUser] = useState<{ username: string; displayName: string; description?: string; profile_picture?: string } | null>(null);
   const [isSelf, setIsSelf] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
+  const genreOptions = ["Electronic", "Hip-Hop", "Lo-Fi", "Rock", "Jazz", "Cinematic", "Pop", "Acoustic", "Ambient"];
+
+  // Form states
+  const [songForm, setSongForm] = useState({
+    title: "",
+    genre: "Electronic",
+    releaseYear: new Date().getFullYear().toString(),
+    artists: "",
+    coverFile: null as File | null,
+    audioFile: null as File | null,
+    error: null as string | null
+  });
+
+  const [playlistForm, setPlaylistForm] = useState({
+    name: "",
+    description: "",
+    songIds: [] as number[],
+    error: null as string | null
+  });
+
   const contentRef = useRef<HTMLDivElement>(null);
 
   // States for specific features
-  const [modal, setModal] = useState<{ 
-    mode: "edit-song" | "upload-song" | "edit-playlist" | "create-playlist" | "delete-account" | "edit-profile" | null; 
-    data?: any; 
-    isClosing?: boolean; 
+  const [modal, setModal] = useState<{
+    mode: "edit-song" | "upload-song" | "edit-playlist" | "create-playlist" | "delete-account" | "edit-profile" | null;
+    data?: any;
+    isClosing?: boolean;
   }>({ mode: null });
+
+  // Sync song form when opening edit modal
+  useEffect(() => {
+    if (modal.mode === "edit-song" && modal.data) {
+      setSongForm({
+        title: modal.data.title,
+        genre: modal.data.genre,
+        releaseYear: modal.data.release_year.toString(),
+        artists: modal.data.artists,
+        coverFile: null,
+        audioFile: null,
+        error: null
+      });
+    } else if (modal.mode === "upload-song") {
+      setSongForm({
+        title: "",
+        genre: "Electronic",
+        releaseYear: new Date().getFullYear().toString(),
+        artists: "",
+        coverFile: null,
+        audioFile: null,
+        error: null
+      });
+    } else if (modal.mode === "create-playlist") {
+      setPlaylistForm({
+        name: "",
+        description: "",
+        songIds: [],
+        error: null
+      });
+    } else if (modal.mode === "edit-playlist" && modal.data) {
+      setPlaylistForm({
+        name: modal.data.name,
+        description: modal.data.description || "",
+        songIds: modal.data.songs.map((s: any) => s.id),
+        error: null
+      });
+    }
+  }, [modal.mode, modal.data]);
+
   const [deletePass, setDeletePass] = useState("");
   const [playlistSearch, setPlaylistSearch] = useState("");
   const [allSongs, setAllSongs] = useState<Song[]>([]);
@@ -56,9 +116,9 @@ export default function ProfilePage() {
         setTargetUser(loggedInUser);
       } else {
         // Initial placeholder until fetch
-        setTargetUser(prev => (prev?.username === paramUsername ? prev : { 
-          username: paramUsername, 
-          displayName: paramUsername.charAt(0).toUpperCase() + paramUsername.slice(1) 
+        setTargetUser(prev => (prev?.username === paramUsername ? prev : {
+          username: paramUsername,
+          displayName: paramUsername.charAt(0).toUpperCase() + paramUsername.slice(1)
         }));
       }
     }
@@ -94,7 +154,7 @@ export default function ProfilePage() {
         setPlaylists(playlistsRes || []);
         setAllFollowers(followersRes || []);
         setAllFollowing(followingRes || []);
-        
+
         if (user && followersRes && Array.isArray(followersRes)) {
           setIsFollowing(followersRes.some((f: any) => f.username === user.username));
         }
@@ -111,11 +171,11 @@ export default function ProfilePage() {
     if (modal.mode && !modal.isClosing && editModalRef.current && editOverlayRef.current) {
       // Entry Animation
       gsap.killTweensOf([editOverlayRef.current, editModalRef.current]);
-      gsap.fromTo(editOverlayRef.current, 
+      gsap.fromTo(editOverlayRef.current,
         { backdropFilter: "blur(0px)", backgroundColor: "rgba(0,0,0,0)" },
         { backdropFilter: "blur(12px)", backgroundColor: "rgba(0,0,0,0.8)", duration: 0.4 }
       );
-      gsap.fromTo(editModalRef.current, 
+      gsap.fromTo(editModalRef.current,
         { filter: "blur(20px)", opacity: 0, scale: 0.92, y: 20 },
         { filter: "blur(0px)", opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out", delay: 0.05 }
       );
@@ -137,6 +197,7 @@ export default function ProfilePage() {
           setModal({ mode: null });
           setDeletePass("");
           setPlaylistSearch("");
+          setSongForm({ title: "", genre: "Electronic", releaseYear: "", artists: "", coverFile: null, audioFile: null, error: null });
         }
       });
     } else {
@@ -151,15 +212,125 @@ export default function ProfilePage() {
     ...(isSelf ? [{ id: "accounts", label: "Account Management" }] : []),
   ];
 
+  const handleSongSubmit = async () => {
+    const isEdit = modal.mode === "edit-song";
+    const songId = isEdit ? modal.data.id : null;
+    
+    // Validation
+    if (!songForm.title || songForm.title.length > 128) {
+      setSongForm(prev => ({ ...prev, error: "Title must be between 1 and 128 characters" }));
+      return;
+    }
+    const year = parseInt(songForm.releaseYear, 10);
+    const currentYear = new Date().getFullYear();
+    if (isNaN(year) || year < 2000 || year > currentYear) {
+      setSongForm(prev => ({ ...prev, error: `Invalid year (2000-${currentYear})` }));
+      return;
+    }
+    if (!songForm.artists) {
+      setSongForm(prev => ({ ...prev, error: "At least one artist name is required" }));
+      return;
+    }
+    if (songForm.coverFile && songForm.coverFile.size > 2 * 1024 * 1024) {
+      setSongForm(prev => ({ ...prev, error: "Image size must be under 2MB" }));
+      return;
+    }
+    if (!isEdit && !songForm.audioFile) {
+      setSongForm(prev => ({ ...prev, error: "Audio file is required for uploads" }));
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", songForm.title);
+    formData.append("genre", songForm.genre);
+    formData.append("release_year", songForm.releaseYear);
+    formData.append("artists", songForm.artists);
+    if (songForm.coverFile) formData.append("cover", songForm.coverFile);
+    if (songForm.audioFile) formData.append("audio", songForm.audioFile);
+
+    try {
+      const url = isEdit ? `http://localhost:5000/songs?id=${songId}` : `http://localhost:5000/songs`;
+      const response = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        setSongForm(prev => ({ ...prev, error: result.error || "Submission failed" }));
+        return;
+      }
+
+      // Success - refresh data
+      if (targetUser?.username) {
+        const updatedUploads = await fetch(`http://localhost:5000/contributors/contributions?username=${targetUser.username}`).then(r => r.json());
+        setUploadedSongs(updatedUploads || []);
+      }
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      setSongForm(prev => ({ ...prev, error: "Connection error" }));
+    }
+  };
+
+  const handlePlaylistSubmit = async () => {
+    const isEdit = modal.mode === "edit-playlist";
+    const oldName = isEdit ? modal.data.name : null;
+
+    // 1. Mandatory Validation
+    if (!playlistForm.name || playlistForm.name.trim().length === 0) {
+      setPlaylistForm(prev => ({ ...prev, error: "Playlist name is mandatory" }));
+      return;
+    }
+    if (playlistForm.songIds.length === 0) {
+      setPlaylistForm(prev => ({ ...prev, error: "At least one song is mandatory" }));
+      return;
+    }
+
+    try {
+      const url = isEdit
+        ? `http://localhost:5000/playlists?name=${encodeURIComponent(oldName)}&creator=${user?.username}`
+        : `http://localhost:5000/playlists?creator=${user?.username}`;
+
+      const payload = {
+        name: playlistForm.name,
+        description: playlistForm.name, // Using name as description for now per original logic
+        songIds: playlistForm.songIds
+      };
+
+      const response = await fetch(url, {
+        method: isEdit ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        setPlaylistForm(prev => ({ ...prev, error: result.error || "Submission failed" }));
+        return;
+      }
+
+      // Success - refresh data
+      if (user?.username) {
+        const updatedPlaylists = await fetch(`http://localhost:5000/playlists/user/${user.username}`).then(r => r.json());
+        setPlaylists(updatedPlaylists || []);
+      }
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      setPlaylistForm(prev => ({ ...prev, error: "Connection error" }));
+    }
+  };
+
   /* ── Tab: Profile ── */
   const renderProfileTab = () => {
 
-    const filteredFollowing = allFollowing.filter(u => 
+    const filteredFollowing = allFollowing.filter(u =>
       u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredFollowers = allFollowers.filter(u => 
+    const filteredFollowers = allFollowers.filter(u =>
       u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -175,10 +346,10 @@ export default function ProfilePage() {
             {users.map((u) => (
               <Link key={u.username} to={`/profile/${u.username}`} className="flex flex-col items-center gap-3 group no-underline">
                 <div className="w-20 h-20 rounded-full border-2 border-white/5 group-hover:border-accent group-hover:scale-110 transition-all duration-300 p-0.5 overflow-hidden">
-                  <img 
-                    src={u.profile_picture ? `http://localhost:5000/userData/${u.profile_picture}` : `https://ui-avatars.com/api/?name=${u.username}&background=242435&color=fff&size=128`} 
-                    className="w-full h-full rounded-full object-cover" 
-                    alt="" 
+                  <img
+                    src={u.profile_picture ? `http://localhost:5000/profilePic/${u.profile_picture}` : `https://ui-avatars.com/api/?name=${u.username}&background=242435&color=fff&size=128`}
+                    className="w-full h-full rounded-full object-cover"
+                    alt=""
                   />
                 </div>
                 <div className="text-center">
@@ -288,7 +459,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 overflow-hidden transition-all duration-500">
-                {display.map((s: any, i: number) => <CategoryCard key={s.id} index={i} song={s} />)}
+                {display.map((s: any, i: number) => <CategoryCard key={s.id} index={i} song={s} contextSongs={pl.songs} />)}
                 {pl.songs.length > 5 && (
                   <button onClick={() => setExpandedPlaylistId(isExp ? null : pl.id)} className="w-full aspect-[4/5] bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-2 hover:border-accent text-fg-muted hover:text-accent transition-all group/toggle">
                     <div className={`w-10 h-10 rounded-full border border-current flex items-center justify-center transition-transform duration-300 ${isExp ? 'rotate-45' : ''}`}>+</div>
@@ -322,65 +493,102 @@ export default function ProfilePage() {
 
   const renderUniversalModal = () => {
     if (!modal.mode) return null;
-    
+
     // Song/Upload UI
     if (modal.mode === "edit-song" || modal.mode === "upload-song") {
       const isEdit = modal.mode === "edit-song";
       const song = modal.data as Song;
-      const theme = getGenreTheme(song?.genre || "Electronic");
-      
+      const theme = getGenreTheme(songForm.genre || "Electronic");
+
       return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 sm:p-12">
           <div ref={editOverlayRef} className="absolute inset-0" onClick={closeModal} />
-          <div 
-            ref={editModalRef} 
-            className="relative max-w-400 w-full h-160 bg-bg-card rounded-[4px] border border-white/10 flex flex-row overflow-hidden shadow-2xl"
+          <div
+            ref={editModalRef}
+            className="relative max-w-400 w-full h-[640px] bg-bg-card rounded-[32px] border border-white/10 flex flex-row overflow-hidden shadow-2xl"
             style={{ boxShadow: `0 0 50px ${theme.glow}` }}
           >
-            <button onClick={closeModal} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-colors z-30">✕</button>
-            <div className="shrink-0 h-full aspect-square bg-[#242435] border-r border-white/10 relative overflow-hidden">
-              {song?.cover_path ? (
-                <img src={`http://localhost:5000/${song.cover_path}`} className="w-full h-full object-cover" alt="" />
+            <button onClick={closeModal} className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-colors z-30">✕</button>
+            <div className="shrink-0 h-full aspect-square bg-[#242435] border-r border-white/10 relative overflow-hidden flex flex-col items-center justify-center p-8 group">
+              {(songForm.coverFile || (isEdit && song?.cover_path)) ? (
+                <img
+                  src={songForm.coverFile ? URL.createObjectURL(songForm.coverFile) : (song.cover_path && !song.cover_path.includes('/') ? `http://localhost:5000/cover/${song.cover_path}` : `http://localhost:5000/${song.cover_path}`)}
+                  className="w-full h-full object-cover absolute inset-0 group-hover:scale-110 transition-transform duration-700"
+                  alt=""
+                />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/5 opacity-50">
-                  <svg className="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+                <div className="w-full h-full flex flex-col items-center justify-center text-white/5 opacity-50 absolute inset-0">
+                  <svg className="w-24 h-24 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  <p className="text-xs font-bold uppercase tracking-widest">Select Cover Image</p>
                 </div>
               )}
+              <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) setSongForm(prev => ({ ...prev, coverFile: file, error: null }));
+              }} />
+              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 text-center text-xs font-bold text-white pointer-events-none">
+                {songForm.coverFile ? "Change Image" : "Upload Artwork (Max 2MB)"}
+              </div>
             </div>
-            <div className="flex-1 p-8 flex flex-col justify-center space-y-6">
+            <div className="flex-1 p-12 flex flex-col justify-center space-y-6">
               <h2 className="text-3xl font-bold text-white tracking-tight uppercase" style={{ fontVariant: "small-caps" }}>{isEdit ? "Edit Track" : "Upload Track"}</h2>
               <div className="space-y-4">
-                <input id="edit-song-title" type="text" defaultValue={isEdit ? song.title : ""} placeholder="Title" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
-                <input type="text" defaultValue={isEdit ? song.artists : ""} placeholder="Artists" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Track Title</label>
+                  <input type="text" value={songForm.title} onChange={e => setSongForm(prev => ({ ...prev, title: e.target.value, error: null }))} placeholder="Title" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Artist Names (comma separated)</label>
+                  <input type="text" value={songForm.artists} onChange={e => setSongForm(prev => ({ ...prev, artists: e.target.value, error: null }))} placeholder="e.g. Creator, Feature" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
+                </div>
                 <div className="flex gap-4">
-                  <input id="edit-song-genre" type="text" defaultValue={isEdit ? song.genre : ""} placeholder="Genre" className="flex-1 bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
-                  <input id="edit-song-year" type="number" defaultValue={isEdit ? song.release_year : new Date().getFullYear()} placeholder="Year" className="flex-1 bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
+                  <div className="flex-1 space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Genre</label>
+                    <select value={songForm.genre} onChange={e => setSongForm(prev => ({ ...prev, genre: e.target.value, error: null }))} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent appearance-none cursor-pointer">
+                      {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Release Year</label>
+                    <input type="number" value={songForm.releaseYear} onChange={e => setSongForm(prev => ({ ...prev, releaseYear: e.target.value, error: null }))} placeholder="Year" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
+                  </div>
+                </div>
+
+                {/* Audio File Input Section */}
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Audio File (.mp3, .flac, .wav)</label>
+                  <div className="relative group/audio">
+                    <input
+                      type="file"
+                      accept=".mp3,.flac,.wav"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) setSongForm(prev => ({ ...prev, audioFile: file, error: null }));
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="w-full bg-white/5 border border-dashed border-white/10 rounded-xl p-4 flex items-center gap-4 group-hover/audio:border-accent/50 transition-all">
+                      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2z" /></svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-white truncate">{songForm.audioFile ? songForm.audioFile.name : (isEdit ? "Keep existing or replace..." : "Choose sound file")}</p>
+                        <p className="text-[10px] text-fg-muted uppercase tracking-widest font-bold">{songForm.audioFile ? `${(songForm.audioFile.size / (1024 * 1024)).toFixed(2)} MB` : "Max 20MB"}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {songForm.error && (
+                <p className="text-[#ff4466] text-xs font-bold text-center animate-[authShake_0.35s_ease] py-2 bg-red-500/5 rounded-lg border border-red-500/10">
+                  {songForm.error}
+                </p>
+              )}
+
               <div className="pt-4 flex gap-4">
                 <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">Cancel</button>
-                <button onClick={async () => { 
-                  const title = (document.getElementById('edit-song-title') as HTMLInputElement)?.value;
-                  const genre = (document.getElementById('edit-song-genre') as HTMLInputElement)?.value;
-                  const yearStr = (document.getElementById('edit-song-year') as HTMLInputElement)?.value;
-                  const release_year = yearStr ? parseInt(yearStr, 10) : undefined;
-                  if (title) {
-                    try {
-                      if (isEdit && song?.title) {
-                        await fetch(`http://localhost:5000/songs?title=${song.title}`, {
-                          method: "PUT", headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ genre, release_year })
-                        });
-                      } else {
-                        await fetch(`http://localhost:5000/songs`, {
-                          method: "POST", headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ title, genre, release_year })
-                        });
-                      }
-                    } catch(err) { console.error(err); }
-                  }
-                  closeModal(); 
-                }} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">{isEdit ? "Commit Changes" : "Confirm Upload"}</button>
+                <button onClick={handleSongSubmit} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">{isEdit ? "Commit Changes" : "Confirm Upload"}</button>
               </div>
             </div>
           </div>
@@ -391,18 +599,17 @@ export default function ProfilePage() {
     // Playlist Create/Edit UI
     if (modal.mode === "create-playlist" || modal.mode === "edit-playlist") {
       const isEdit = modal.mode === "edit-playlist";
-      const playlist = modal.data;
-      
-      const filteredResults = allSongs.filter(s => 
-        s.title.toLowerCase().includes(playlistSearch.toLowerCase()) || 
+
+      const filteredResults = allSongs.filter(s =>
+        s.title.toLowerCase().includes(playlistSearch.toLowerCase()) ||
         s.artists.toLowerCase().includes(playlistSearch.toLowerCase())
       ).slice(0, 5);
 
       return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 sm:p-12">
           <div ref={editOverlayRef} className="absolute inset-0" onClick={closeModal} />
-          <div 
-            ref={editModalRef} 
+          <div
+            ref={editModalRef}
             className="relative max-w-400 w-full h-160 bg-bg-card rounded-[4px] border border-white/10 flex flex-row overflow-hidden shadow-2xl"
           >
             <button onClick={closeModal} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-colors z-30">✕</button>
@@ -413,75 +620,71 @@ export default function ProfilePage() {
               <h3 className="text-xl font-bold text-white text-center">{isEdit ? "Refining Collection" : "Assemble New Mix"}</h3>
             </div>
             <div className="flex-1 p-8 flex flex-col min-w-0">
-               <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight" style={{ fontVariant: "small-caps" }}>{isEdit ? "Modify Playlist" : "Create Playlist"}</h2>
-               <div className="space-y-6 flex-1 flex flex-col min-h-0">
-                 <input id="edit-playlist-name" type="text" defaultValue={isEdit ? playlist.name : ""} placeholder="Playlist Title" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent" />
-                 
-                 <div className="flex flex-col flex-1 min-h-0 space-y-4">
-                   <div className="relative">
-                     <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                     <input type="text" placeholder="Search tracks to add..." value={playlistSearch} onChange={e => setPlaylistSearch(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-accent" />
-                     {playlistSearch && (
-                       <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card border border-white/10 rounded-xl shadow-2xl z-40 p-2 overflow-hidden">
-                         {filteredResults.length ? filteredResults.map(s => (
-                           <button key={s.id} onClick={async () => { 
-                             if (isEdit && playlist?.name && user?.username) {
-                               try {
-                                 await fetch(`http://localhost:5000/playlists/songs?name=${playlist.name}&creator=${user.username}`, {
-                                   method: "POST", headers: { "Content-Type": "application/json" },
-                                   body: JSON.stringify({ songIds: [s.id] })
-                                 });
-                               } catch(err) { console.error(err); }
-                             }
-                             setPlaylistSearch(""); 
-                           }} className="w-full text-left px-4 py-2 hover:bg-white/5 rounded-lg text-sm flex justify-between group border-none bg-transparent cursor-pointer">
-                             <span className="text-white font-medium">{s.title} <span className="text-fg-muted ml-2 text-xs">— {s.artists}</span></span>
-                             <span className="text-accent opacity-0 group-hover:opacity-100">+ Add</span>
-                           </button>
-                         )) : <div className="px-4 py-2 text-xs text-fg-muted italic text-center">No results found in library</div>}
-                       </div>
-                     )}
-                   </div>
+              <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-tight" style={{ fontVariant: "small-caps" }}>{isEdit ? "Modify Playlist" : "Create Playlist"}</h2>
+              <div className="space-y-6 flex-1 flex flex-col min-h-0">
+                <input
+                  type="text"
+                  value={playlistForm.name}
+                  onChange={e => setPlaylistForm(prev => ({ ...prev, name: e.target.value, error: null }))}
+                  placeholder="Playlist Title"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent"
+                />
 
-                   <div className="flex-1 overflow-y-auto pr-2 space-y-2 overscroll-contain no-scrollbar">
-                     <p className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Current Tracks ({isEdit ? playlist.songs.length : 0})</p>
-                     {isEdit ? playlist.songs.map((s: any) => (
-                       <div key={s.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 group hover:bg-white/10 transition-colors">
-                         <div>
-                           <p className="text-sm font-bold text-white">{s.title}</p>
-                           <p className="text-[10px] text-fg-muted">{s.artists}</p>
-                         </div>
-                         <button className="text-white/20 hover:text-red-500 transition-colors p-2 cursor-pointer border-none bg-transparent">✕</button>
-                       </div>
-                     )) : (
-                       <div className="h-full flex flex-col items-center justify-center opacity-30 italic text-sm">Empty... start searching!</div>
-                     )}
-                   </div>
-                 </div>
+                <div className="flex flex-col flex-1 min-h-0 space-y-4">
+                  <div className="relative">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <input type="text" placeholder="Search tracks to add..." value={playlistSearch} onChange={e => setPlaylistSearch(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-accent" />
+                    {playlistSearch && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-bg-card border border-white/10 rounded-xl shadow-2xl z-40 p-2 overflow-hidden">
+                        {filteredResults.length ? filteredResults.map(s => (
+                          <button key={s.id} onClick={() => {
+                            if (!playlistForm.songIds.includes(s.id)) {
+                              setPlaylistForm(prev => ({ ...prev, songIds: [...prev.songIds, s.id], error: null }));
+                            }
+                            setPlaylistSearch("");
+                          }} className="w-full text-left px-4 py-2 hover:bg-white/5 rounded-lg text-sm flex justify-between group border-none bg-transparent cursor-pointer">
+                            <span className="text-white font-medium">{s.title} <span className="text-fg-muted ml-2 text-xs">— {s.artists}</span></span>
+                            <span className="text-accent opacity-0 group-hover:opacity-100">+ Add</span>
+                          </button>
+                        )) : <div className="px-4 py-2 text-xs text-fg-muted italic text-center">No results found in library</div>}
+                      </div>
+                    )}
+                  </div>
 
-                 <div className="pt-4 flex gap-4">
-                    <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">Cancel</button>
-                    <button onClick={async () => {
-                      const plName = (document.getElementById('edit-playlist-name') as HTMLInputElement)?.value;
-                      if (user?.username && plName) {
-                        try {
-                          if (isEdit && playlist?.name) {
-                            await fetch(`http://localhost:5000/playlists?name=${playlist.name}&creator=${user.username}`, {
-                              method: "PUT", headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ name: plName })
-                            });
-                          } else {
-                            await fetch(`http://localhost:5000/playlists?creator=${user.username}`, {
-                              method: "POST", headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ name: plName, description: plName })
-                            });
-                          }
-                        } catch(err) { console.error(err); }
-                      }
-                      closeModal(); 
-                    }} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">{isEdit ? "Commit Changes" : "Assemble Mix"}</button>
-                 </div>
-               </div>
+                  <div className="flex-1 overflow-y-auto pr-2 space-y-2 overscroll-contain no-scrollbar">
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Current Tracks ({playlistForm.songIds.length})</p>
+                    {playlistForm.songIds.length > 0 ? playlistForm.songIds.map((sid: number) => {
+                      const s = allSongs.find(song => song.id === sid);
+                      if (!s) return null;
+                      return (
+                        <div key={s.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 group hover:bg-white/10 transition-colors">
+                          <div>
+                            <p className="text-sm font-bold text-white">{s.title}</p>
+                            <p className="text-[10px] text-fg-muted">{s.artists}</p>
+                          </div>
+                          <button
+                            onClick={() => setPlaylistForm(prev => ({ ...prev, songIds: prev.songIds.filter(id => id !== sid) }))}
+                            className="text-white/20 hover:text-red-500 transition-colors p-2 cursor-pointer border-none bg-transparent"
+                          >✕</button>
+                        </div>
+                      );
+                    }) : (
+                      <div className="h-full flex flex-col items-center justify-center opacity-30 italic text-sm">Empty... start searching!</div>
+                    )}
+                  </div>
+                </div>
+
+                {playlistForm.error && (
+                  <p className="text-[#ff4466] text-xs font-bold text-center animate-[authShake_0.35s_ease] py-2 bg-red-500/5 rounded-lg border border-red-500/10">
+                    {playlistForm.error}
+                  </p>
+                )}
+
+                <div className="pt-4 flex gap-4">
+                  <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">Cancel</button>
+                  <button onClick={handlePlaylistSubmit} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">{isEdit ? "Commit Changes" : "Assemble Mix"}</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -492,17 +695,17 @@ export default function ProfilePage() {
       return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 sm:p-12">
           <div ref={editOverlayRef} className="absolute inset-0" onClick={closeModal} />
-          <div 
-            ref={editModalRef} 
+          <div
+            ref={editModalRef}
             className="relative max-w-400 w-full h-160 bg-bg-card rounded-[4px] border border-white/10 flex flex-row overflow-hidden shadow-2xl"
           >
             <button onClick={closeModal} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-colors z-30">✕</button>
             <div className="shrink-0 h-full aspect-square bg-[#242435] border-r border-white/10 flex flex-col items-center justify-center p-12">
               <div className="w-48 h-48 rounded-full border-4 border-accent p-1 overflow-hidden group">
-                <img 
-                  src={user?.profile_picture ? `http://localhost:5000/userData/${user.profile_picture}` : `https://ui-avatars.com/api/?name=${user?.username}&background=E91E8C&color=fff&size=256`} 
-                  className="w-full h-full rounded-full object-cover" 
-                  alt="" 
+                <img
+                  src={user?.profile_picture ? `http://localhost:5000/userData/${user.profile_picture}` : `https://ui-avatars.com/api/?name=${user?.username}&background=E91E8C&color=fff&size=256`}
+                  className="w-full h-full rounded-full object-cover"
+                  alt=""
                 />
               </div>
               <input type="file" ref={profileFileRef} className="hidden" accept="image/*" />
@@ -539,7 +742,7 @@ export default function ProfilePage() {
                         body: formData
                       });
                       const data = await res.json();
-                      
+
                       // Update local state to reflect changes
                       if (data.profile_picture || displayName) {
                         const updated = { ...user, displayName: displayName || user.displayName, profile_picture: data.profile_picture || user.profile_picture };
@@ -548,7 +751,7 @@ export default function ProfilePage() {
                       }
                     } catch (err) { console.error(err); }
                   }
-                  closeModal(); 
+                  closeModal();
                 }} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">Update Identity</button>
               </div>
             </div>
@@ -569,7 +772,7 @@ export default function ProfilePage() {
             </div>
             <div className="mt-10 flex gap-4">
               <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white rounded-2xl hover:bg-white/10">Cancel</button>
-              <button 
+              <button
                 disabled={!deletePass}
                 onClick={async () => {
                   if (user?.username) {
@@ -578,7 +781,7 @@ export default function ProfilePage() {
                       setUser(null);
                     } catch (err) { console.error(err); }
                   }
-                  navigate("/"); 
+                  navigate("/");
                 }}
                 className="flex-[2] py-4 bg-red-500 text-white font-bold rounded-2xl disabled:opacity-30 disabled:grayscale transition-all"
               >
@@ -602,10 +805,10 @@ export default function ProfilePage() {
             <div className="relative group">
               <div className="absolute inset-0 bg-accent blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity" />
               <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-gradient-to-tr from-accent to-accent-light p-1 shadow-2xl overflow-hidden relative z-10">
-                <img 
-                  src={targetUser?.profile_picture ? `http://localhost:5000/userData/${targetUser.profile_picture}` : `https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=E91E8C&color=fff&size=256`} 
-                  className="w-full h-full rounded-full object-cover" 
-                  alt="" 
+                <img
+                  src={targetUser?.profile_picture ? `http://localhost:5000/userData/${targetUser.profile_picture}` : `https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=E91E8C&color=fff&size=256`}
+                  className="w-full h-full rounded-full object-cover"
+                  alt=""
                 />
               </div>
             </div>
@@ -624,7 +827,7 @@ export default function ProfilePage() {
                 <button onClick={() => setModal({ mode: "edit-profile" })} className="px-6 py-2.5 rounded-full bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 transition-all">Edit Profile</button>
               )}
               {!isSelf && (
-                <button 
+                <button
                   onClick={async () => {
                     if (!user) return navigate("/login");
                     try {
@@ -647,9 +850,9 @@ export default function ProfilePage() {
           </div>
           <div className="flex items-center gap-2 mb-10 overflow-x-auto no-scrollbar py-1">
             {tabs.map(tab => (
-              <button 
-                key={tab.id} 
-                onClick={() => { setActiveTab(tab.id as Tab); setSearchQuery(""); }} 
+              <button
+                key={tab.id}
+                onClick={() => { setActiveTab(tab.id as Tab); setSearchQuery(""); }}
                 className={`relative px-8 py-4 text-sm font-bold transition-all border-none bg-transparent cursor-pointer whitespace-nowrap rounded-2xl ${activeTab === tab.id ? "text-accent bg-accent/5" : "text-fg-secondary hover:text-white"}`}
               >
                 {tab.label}

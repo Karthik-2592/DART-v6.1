@@ -52,9 +52,6 @@ cursor = conn.cursor()
 
 # Drop old tables if they exist (reset)
 cursor.execute("DROP TABLE IF EXISTS user_follows")
-cursor.execute("DROP TABLE IF EXISTS song_artists")
-cursor.execute("DROP TABLE IF EXISTS artists")
-cursor.execute("DROP TABLE IF EXISTS playlist_shares")
 cursor.execute("DROP TABLE IF EXISTS song_play_counts")
 cursor.execute("DROP TABLE IF EXISTS playlist_songs")
 cursor.execute("DROP TABLE IF EXISTS playlists")
@@ -132,18 +129,6 @@ CREATE TABLE playlist_songs (
     FOREIGN KEY(song_id) REFERENCES songs(id)
 );
 """)
-
-
-cursor.execute("""
-CREATE TABLE playlist_shares (
-    playlist_id INTEGER,
-    user_id INTEGER,
-    PRIMARY KEY (playlist_id, user_id),
-    FOREIGN KEY(playlist_id) REFERENCES playlists(id),
-    FOREIGN KEY(user_id) REFERENCES users(id)
-);
-""")
-
 cursor.execute("""
 CREATE TABLE user_follows (
     follower_id INTEGER,

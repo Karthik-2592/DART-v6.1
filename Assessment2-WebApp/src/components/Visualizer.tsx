@@ -315,7 +315,11 @@ export default function Visualizer({ song }: { song?: Song }) {
     return () => audio.removeEventListener("play", handlePlay);
   }, [ensureAudioContext]);
 
-  const audioSrc = song ? `http://localhost:5000/${song.audio_path.split('/').map(encodeURIComponent).join('/')}` : "";
+  const audioSrc = song 
+    ? (song.audio_path && !song.audio_path.includes('/') 
+        ? `http://localhost:5000/audio/${encodeURIComponent(song.audio_path)}` 
+        : `http://localhost:5000/${song.audio_path.split('/').map(encodeURIComponent).join('/')}`)
+    : "";
 
   return (
     <section className="flex justify-center w-full">

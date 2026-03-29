@@ -65,7 +65,7 @@ router.get('/contributions', async (req, res) => {
     if (!userId) return res.status(404).json({ error: "User not found" });
 
     const query = `
-        SELECT s.*, GROUP_CONCAT(u2.display_name, ', ') AS artists
+        SELECT s.*, GROUP_CONCAT(u2.display_name, ', ') AS artists, GROUP_CONCAT(u2.username, ', ') AS artist_usernames
         FROM songs s
         JOIN song_contributors sc ON s.id = sc.song_id
         LEFT JOIN song_contributors sc2 ON s.id = sc2.song_id

@@ -92,8 +92,10 @@ router.post('/play', async (req, res) => {
             return res.status(500).json({ error: err.message });
         }
         if (this.changes > 0) {
-            console.log(`[FAVORITE] User-specific play count incremented for: ${username} on track: ${title}`);
-            res.json({ message: "User play count incremented" });
+            db.get(`SELECT user_play_count FROM favorites WHERE user_id = ? AND song_id = ?`, [userId, songId], (err, row) => {
+                if (!err && row) console.log(`[FAVORITE] User-specific play count incremented for: ${username} on track: ${title}. Current: ${row.user_play_count}`);
+                res.json({ message: "User play count incremented", user_play_count: row ? row.user_play_count : undefined });
+            });
         } else {
             // Track not in favorites - skip logging and return no-op message
             res.json({ message: "Track not in favorites, user-specific stats ignored." });

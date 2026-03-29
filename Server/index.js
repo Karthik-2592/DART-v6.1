@@ -29,8 +29,8 @@ app.use("/Storage", express.static(path.join(__dirname, "Storage"), {
     }
 }));
 app.use('/audio', express.static(path.join(__dirname, 'Storage/audio')));
-app.use('/covers', express.static(path.join(__dirname, 'Storage/covers')));
-app.use('/userData', express.static(path.join(__dirname, 'Storage/userData')));
+app.use('/cover', express.static(path.join(__dirname, 'Storage/cover')));
+app.use('/profilePic', express.static(path.join(__dirname, 'Storage/profilePic')));
 
 // Register modular routes
 app.use("/users", userRoutes);

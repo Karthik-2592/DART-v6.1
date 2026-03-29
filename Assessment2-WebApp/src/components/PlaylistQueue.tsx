@@ -6,11 +6,12 @@ import { type Song } from "./Categories";
 export default function PlaylistQueue() {
   const [songs, setSongs] = useState<Song[]>([]);
   const [startIndex, setStartIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
   const currentSong = location.state?.song as Song | undefined;
+  const contextSongs = location.state?.contextSongs as Song[] | undefined;
 
   useEffect(() => {
     fetch("http://localhost:5000/songs")
@@ -20,6 +21,11 @@ export default function PlaylistQueue() {
   }, []);
 
   const queueSongs = useMemo(() => {
+    // If contextSongs provided (from a playlist), use them primarily
+    if (contextSongs && contextSongs.length > 0) {
+      return contextSongs.filter(s => s.id !== currentSong?.id).slice(0, 10);
+    }
+
     if (songs.length === 0) return [];
     
     // Prioritize songs of the same genre as current song, then others
@@ -31,7 +37,7 @@ export default function PlaylistQueue() {
     }
     
     return filtered.slice(0, 10); // Show top 10 as queue
-  }, [songs, currentSong]);
+  }, [songs, currentSong, contextSongs]);
 
   const handleDotClick = useCallback(
     (index: number) => {
@@ -62,10 +68,17 @@ export default function PlaylistQueue() {
       {/* Toggle button */}
       <div className="flex items-center justify-between mb-12 mt-12">
         <h3 className="text-xl font-bold font-[var(--font-family-heading)] text-fg-primary flex items-center gap-2">
-          🎶 {currentSong ? `More ${currentSong.genre} & Others` : "Up Next"}
+          🎶 {contextSongs ? "Playlist Collection" : (currentSong ? `More ${currentSong.genre} & Others` : "Up Next")}
         </h3>
         <button
-          onClick={() => setIsVisible((v) => !v)}
+          onClick={() => {
+            const user = sessionStorage.getItem("soundshare_user");
+            if (!user) {
+              alert("login to access playlist features");
+              return;
+            }
+            setIsVisible((v) => !v);
+          }}
           className="player-btn text-xs text-fg-muted hover:text-fg-primary bg-bg-card-hover border border-border rounded-full px-4 py-1.5 cursor-pointer transition-all duration-200"
         >
           {isVisible ? "Hide Queue" : "Show Queue"}
@@ -95,7 +108,7 @@ export default function PlaylistQueue() {
                     key={card.id}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
-                    onClick={() => navigate("/player", { state: { song: card } })}
+                    onClick={() => navigate("/player", { state: { song: card, contextSongs } })}
                     className="queue-card relative shrink-0 w-[calc(50%-1rem)] h-68 bg-bg-card rounded-[4px] flex flex-row items-stretch cursor-pointer border border-border transition-transform"
                     style={{
                       "--card-theme-color": theme.color,
@@ -105,7 +118,11 @@ export default function PlaylistQueue() {
                     {/* Left: 1:1 Image */}
                     <div className="shrink-0 h-full aspect-square bg-[#242435] rounded-l-[4px] border-r border-border flex flex-col items-center justify-center overflow-hidden">
                       {card.cover_path ? (
-                        <img src={`http://localhost:5000/${card.cover_path}`} alt={card.title} className="w-full h-full object-cover pointer-events-none" />
+                        <img 
+                          src={card.cover_path && !card.cover_path.includes('/') ? `http://localhost:5000/cover/${card.cover_path}` : `http://localhost:5000/${card.cover_path}`} 
+                          alt={card.title} 
+                          className="w-full h-full object-cover pointer-events-none" 
+                        />
                       ) : (
                         <svg className="w-8 h-8 text-fg-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />

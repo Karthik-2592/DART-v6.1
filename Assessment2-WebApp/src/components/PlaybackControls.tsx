@@ -20,6 +20,7 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
   const [dragTime, setDragTime] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
+  const hasIncrementedRef = useRef(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
@@ -64,8 +65,9 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
   }, []);
 
   const incrementPlayCount = useCallback(() => {
-    if (!song?.title) return;
+    if (!song?.title || hasIncrementedRef.current) return;
     
+    hasIncrementedRef.current = true;
     // 1. Global play count
     fetch(`http://localhost:5000/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
       .catch(err => console.error("Failed to increment global play count:", err));
@@ -88,6 +90,7 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     if (!progressBarRef.current) return;
     
     setIsEntering(true);
+    hasIncrementedRef.current = false;
     
     gsap.fromTo(
       progressBarRef.current,

@@ -71,14 +71,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
             )`);
 
 
-            db.run(`CREATE TABLE IF NOT EXISTS playlist_shares (
-                playlist_id INTEGER,
-                user_id INTEGER,
-                PRIMARY KEY (playlist_id, user_id),
-                FOREIGN KEY(playlist_id) REFERENCES playlists(id),
-                FOREIGN KEY(user_id) REFERENCES users(id)
-            )`);
-
             db.run(`CREATE TABLE IF NOT EXISTS user_follows (
                 follower_id INTEGER,
                 following_id INTEGER,

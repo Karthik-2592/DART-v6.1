@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 // Configure multer storage for profile pictures
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, '../Storage/userData/ProfilePicture/');
+        const uploadDir = path.join(__dirname, '../Storage/profilePic/');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
     let params = [];
 
     if (username) {
-        query += ` WHERE username = ?`;
+        query += ` WHERE username = ? COLLATE NOCASE`;
         params.push(username);
     } else if (email) {
         query += ` WHERE email = ?`;
@@ -86,7 +86,7 @@ router.put('/', upload.single('profile_picture'), async (req, res) => {
     if (!userId) return res.status(404).json({ error: "User not found" });
 
     const { display_name, description } = req.body;
-    const profile_picture = req.file ? `ProfilePicture/${req.file.filename}` : undefined;
+    const profile_picture = req.file ? req.file.filename : undefined;
     
     // Build dynamic UPDATE query to retain original values for unspecified fields
     let updates = [];
@@ -133,7 +133,7 @@ router.delete('/', async (req, res) => {
 // POST /users/register
 router.post('/register', upload.single('profile_picture'), (req, res) => {
     const { username, password, email, display_name, description } = req.body;
-    const profile_picture = req.file ? `ProfilePicture/${req.file.filename}` : null;
+    const profile_picture = req.file ? req.file.filename : null;
     
     if (!username || !password || !email) {
         return res.status(400).json({ error: "Username, password and email are required" });

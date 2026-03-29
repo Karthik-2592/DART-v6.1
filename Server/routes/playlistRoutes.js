@@ -12,15 +12,47 @@ router.post('/', async (req, res) => {
     const userId = await resolveUser(creator);
     if (!userId) return res.status(404).json({ error: "Creator user not found" });
 
-    const { name, description } = req.body;
-    console.log(`[PLAYLIST] Creating new playlist: "${name}" for creator: ${creator} (ID: ${userId})`);
-    db.run(`INSERT INTO playlists (name, description, user_id) VALUES (?, ?, ?)`, [name, description, userId], function (err) {
-        if (err) {
-            console.error(`[PLAYLIST] DB Error creating playlist "${name}": ${err.message}`);
-            return res.status(500).json({ error: err.message });
-        }
-        console.log(`[PLAYLIST] Playlist "${name}" created successfully. ID: ${this.lastID}`);
-        res.status(201).json({ id: this.lastID });
+    const { name, description, songIds } = req.body;
+
+    // 1. Mandatory Fields Validation
+    if (!name || name.trim().length === 0) return res.status(400).json({ error: "Playlist name is mandatory" });
+    if (!songIds || !Array.isArray(songIds) || songIds.length === 0) {
+        return res.status(400).json({ error: "At least one song is mandatory to create a playlist" });
+    }
+
+    // 2. Uniqueness check (Name per User)
+    db.get(`SELECT 1 FROM playlists WHERE user_id = ? AND name = ?`, [userId, name], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) return res.status(400).json({ error: "Playlist name already exists for this user" });
+
+        // 3. Atomically create playlist and relations
+        console.log(`[PLAYLIST] Creating new playlist: "${name}" for creator: ${creator} (ID: ${userId})`);
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+            db.run(`INSERT INTO playlists (name, description, user_id) VALUES (?, ?, ?)`, [name, description, userId], function (err) {
+                if (err) {
+                    db.run("ROLLBACK");
+                    return res.status(500).json({ error: err.message });
+                }
+                const playlistId = this.lastID;
+
+                // Add Songs
+                const placeholders = songIds.map(() => "(?, ?)").join(",");
+                const values = [];
+                songIds.forEach(sid => values.push(playlistId, sid));
+                db.run(`INSERT INTO playlist_songs (playlist_id, song_id) VALUES ${placeholders}`, values, (err) => {
+                    if (err) {
+                        db.run("ROLLBACK");
+                        return res.status(500).json({ error: "Error adding songs to new playlist" });
+                    }
+
+                    db.run("COMMIT", () => {
+                        console.log(`[PLAYLIST] Playlist "${name}" (ID: ${playlistId}) created and populated successfully.`);
+                        res.status(201).json({ id: playlistId, message: "Playlist created successfully" });
+                    });
+                });
+            });
+        });
     });
 });
 
@@ -49,14 +81,14 @@ router.get('/user/:username', async (req, res) => {
     const query = `SELECT * FROM playlists WHERE user_id = ?`;
     db.all(query, [userId], async (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
-        
+
         // Populate songs for each playlist
         if (!rows || rows.length === 0) return res.json([]);
-        
+
         const playlistsWithSongs = await Promise.all(rows.map(pl => {
             return new Promise((resolve, reject) => {
                 const songQuery = `
-                    SELECT s.*, GROUP_CONCAT(u.display_name, ', ') AS artists
+                    SELECT s.*, GROUP_CONCAT(u.display_name, ', ') AS artists, GROUP_CONCAT(u.username, ', ') AS artist_usernames
                     FROM songs s
                     JOIN playlist_songs ps ON s.id = ps.song_id
                     LEFT JOIN song_contributors sc ON s.id = sc.song_id
@@ -70,41 +102,86 @@ router.get('/user/:username', async (req, res) => {
                 });
             });
         }));
-        
+
         res.json(playlistsWithSongs);
     });
 });
 
-// PUT /playlists?name=:name&creator=:username - Bulk modify metadata
+// PUT /playlists?name=:name&creator=:username - Update playlist metadata, and songs
 router.put('/', async (req, res) => {
     const { name, creator } = req.query;
     if (!name || !creator) return res.status(400).json({ error: "Parameters 'name' and 'creator' are required" });
 
-    const playlistId = await resolvePlaylist(name, creator);
+    const [playlistId, userId] = await Promise.all([
+        resolvePlaylist(name, creator),
+        resolveUser(creator)
+    ]);
     if (!playlistId) return res.status(404).json({ error: "Playlist not found" });
 
-    const { name: newName, description } = req.body;
-    let updates = [];
-    let params = [];
-    if (newName !== undefined) { updates.push("name = ?"); params.push(newName); }
-    if (description !== undefined) { updates.push("description = ?"); params.push(description); }
+    const { name: newName, description, songIds } = req.body;
 
-    if (updates.length > 0) {
-        params.push(playlistId);
-        console.log(`[PLAYLIST] Updating metadata for playlist ID: ${playlistId} (${name} by ${creator}). Fields: ${updates.join(", ")}`);
-        db.run(`UPDATE playlists SET ${updates.join(", ")} WHERE id = ?`, params, (err) => {
-            if (err) {
-                console.error(`[PLAYLIST] DB Error updating playlist metadata: ${err.message}`);
-                return res.status(500).json({ error: err.message });
-            }
-            console.log(`[PLAYLIST] Playlist ID: ${playlistId} metadata updated successfully.`);
-            res.json({ message: "Playlist updated successfully" });
+    // 1. Uniqueness check if name is changing
+    if (newName && newName !== name) {
+        const existing = await new Promise(resolve => {
+            db.get(`SELECT 1 FROM playlists WHERE user_id = ? AND name = ?`, [userId, newName], (err, row) => resolve(row));
         });
-    } else {
-        res.json({ message: "No fields to update" });
+        if (existing) return res.status(400).json({ error: "Playlist name already exists for this user" });
     }
-});
 
+    // 2. Perform updates in a transaction
+    db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+
+        // Metadata update
+        let updates = [];
+        let params = [];
+        if (newName !== undefined) { updates.push("name = ?"); params.push(newName); }
+        if (description !== undefined) { updates.push("description = ?"); params.push(description); }
+
+        const finish = (err) => {
+            if (err) { db.run("ROLLBACK"); return res.status(500).json({ error: err.message }); }
+            db.run("COMMIT", () => {
+                console.log(`[PLAYLIST] Playlist ID: ${playlistId} updated successfully.`);
+                res.json({ message: "Playlist updated successfully" });
+            });
+        };
+
+        const updatePlaylistMetadata = () => {
+            if (updates.length > 0) {
+                params.push(playlistId);
+                db.run(`UPDATE playlists SET ${updates.join(", ")} WHERE id = ?`, params, (err) => {
+                    if (err) return finish(err);
+                    updateSongs();
+                });
+            } else {
+                updateSongs();
+            }
+        };
+
+        const updateSongs = () => {
+            if (songIds && Array.isArray(songIds)) {
+                if (songIds.length === 0) {
+                    db.run("ROLLBACK");
+                    return res.status(400).json({ error: "At least one song is mandatory" });
+                }
+                db.run(`DELETE FROM playlist_songs WHERE playlist_id = ?`, [playlistId], (err) => {
+                    if (err) return finish(err);
+                    const placeholders = songIds.map(() => "(?, ?)").join(",");
+                    const values = [];
+                    songIds.forEach(sid => values.push(playlistId, sid));
+                    db.run(`INSERT INTO playlist_songs (playlist_id, song_id) VALUES ${placeholders}`, values, (err) => {
+                        finish(err);
+                    });
+                });
+            } else {
+                finish();
+            }
+        };
+
+        updatePlaylistMetadata();
+    });
+});
+/////////////////////////////////////////////////////////////
 // DELETE /playlists?name=:name&creator=:username - Delete playlist
 router.delete('/', async (req, res) => {
     const { name, creator } = req.query;
@@ -114,13 +191,12 @@ router.delete('/', async (req, res) => {
     console.log(`[PLAYLIST] Deleting playlist: "${name}" by ${creator} (ID: ${playlistId}) and all associated records.`);
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
-        db.run(`DELETE FROM playlist_shares WHERE playlist_id = ?`, [playlistId]);
         db.run(`DELETE FROM playlist_songs WHERE playlist_id = ?`, [playlistId]);
         db.run(`DELETE FROM playlists WHERE id = ?`, [playlistId], function (err) {
-            if (err) { 
+            if (err) {
                 console.error(`[PLAYLIST] DB Error during playlist deletion transaction: ${err.message}`);
-                db.run("ROLLBACK"); 
-                return res.status(500).json({ error: err.message }); 
+                db.run("ROLLBACK");
+                return res.status(500).json({ error: err.message });
             }
             db.run("COMMIT");
             console.log(`[PLAYLIST] Playlist ID: ${playlistId} and related data removed.`);
@@ -129,46 +205,6 @@ router.delete('/', async (req, res) => {
     });
 });
 
-// POST /playlists?name=:name&creator=:username/songs - Add song(s) to playlist
-router.post('/songs', async (req, res) => {
-    const { name, creator } = req.query;
-    const playlistId = await resolvePlaylist(name, creator);
-    if (!playlistId) return res.status(404).json({ error: "Playlist not found" });
-
-    const { songIds } = req.body;
-    const placeholders = songIds.map(() => "(?, ?)").join(",");
-    const values = [];
-    songIds.forEach(sid => values.push(playlistId, sid));
-
-    console.log(`[PLAYLIST] Adding ${songIds.length} song(s) to playlist ID: ${playlistId} ("${name}")`);
-    db.run(`INSERT OR IGNORE INTO playlist_songs (playlist_id, song_id) VALUES ${placeholders}`, values, (err) => {
-        if (err) {
-            console.error(`[PLAYLIST] DB Error adding songs to playlist ID: ${playlistId}: ${err.message}`);
-            return res.status(500).json({ error: err.message });
-        }
-        console.log(`[PLAYLIST] Successfully added matching song(s) to playlist ID: ${playlistId}.`);
-        res.json({ message: "Songs added to playlist" });
-    });
-});
-
-// DELETE /playlists?name=:name&creator=:username/songs/:title - Remove song by title
-router.delete('/songs/:songTitle', async (req, res) => {
-    const { name, creator } = req.query;
-    const playlistId = await resolvePlaylist(name, creator);
-    const songId = await resolveSong(req.params.songTitle);
-
-    if (!playlistId || !songId) return res.status(404).json({ error: "Playlist or song not found" });
-
-    console.log(`[PLAYLIST] Removing song Title: "${req.params.songTitle}" (ID: ${songId}) from playlist ID: ${playlistId} ("${name}")`);
-    db.run(`DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?`, [playlistId, songId], (err) => {
-        if (err) {
-            console.error(`[PLAYLIST] DB Error removing song from playlist: ${err.message}`);
-            return res.status(500).json({ error: err.message });
-        }
-        console.log(`[PLAYLIST] Song removed from playlist ID: ${playlistId}.`);
-        res.json({ message: "Song removed from playlist" });
-    });
-});
 
 // GET /playlists?name=:name&creator=:username/songs - List songs in playlist
 router.get('/songs', async (req, res) => {
@@ -177,7 +213,7 @@ router.get('/songs', async (req, res) => {
     if (!playlistId) return res.status(404).json({ error: "Playlist not found" });
 
     const query = `
-        SELECT s.*, GROUP_CONCAT(u.display_name, ', ') AS artists
+        SELECT s.*, GROUP_CONCAT(u.display_name, ', ') AS artists, GROUP_CONCAT(u.username, ', ') AS artist_usernames
         FROM songs s
         JOIN playlist_songs ps ON s.id = ps.song_id
         LEFT JOIN song_contributors sc ON s.id = sc.song_id
@@ -188,27 +224,6 @@ router.get('/songs', async (req, res) => {
     db.all(query, [playlistId], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
-    });
-});
-
-// POST /playlists?name=:name&creator=:username/share/:username (Share playlist)
-router.post('/share/:targetUsername', async (req, res) => {
-    const { name, creator } = req.query;
-    const [playlistId, targetUserId] = await Promise.all([
-        resolvePlaylist(name, creator),
-        resolveUser(req.params.targetUsername)
-    ]);
-
-    if (!playlistId || !targetUserId) return res.status(404).json({ error: "Playlist or user not found" });
-
-    console.log(`[PLAYLIST] Sharing playlist ID: ${playlistId} ("${name}") with user: ${req.params.targetUsername} (ID: ${targetUserId})`);
-    db.run(`INSERT OR IGNORE INTO playlist_shares (playlist_id, user_id) VALUES (?, ?)`, [playlistId, targetUserId], (err) => {
-        if (err) {
-            console.error(`[PLAYLIST] DB Error sharing playlist: ${err.message}`);
-            return res.status(500).json({ error: err.message });
-        }
-        console.log(`[PLAYLIST] Playlist ID: ${playlistId} now shared with user: ${req.params.targetUsername}.`);
-        res.json({ message: "Playlist shared" });
     });
 });
 

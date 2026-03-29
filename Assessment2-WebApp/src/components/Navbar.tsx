@@ -98,7 +98,7 @@ export default function Navbar() {
             >
               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-accent-light flex items-center justify-center text-white border-2 border-white/20 shadow-lg overflow-hidden">
                 <img 
-                  src={user.profile_picture ? `http://localhost:5000/userData/${user.profile_picture}` : `https://ui-avatars.com/api/?name=${user.username}&background=E91E8C&color=fff&size=128`} 
+                  src={user.profile_picture ? `http://localhost:5000/profilePic/${user.profile_picture}` : `https://ui-avatars.com/api/?name=${user.username}&background=E91E8C&color=fff&size=128`} 
                   alt="avatar" 
                   className="w-full h-full object-cover"
                 />

@@ -142,7 +142,7 @@ export default function Carousel() {
           <div className="shrink-0 h-full aspect-square bg-[#242435] rounded-l-[4px] border-r border-border flex flex-col items-center justify-center overflow-hidden">
             {current.cover_path ? (
               <img
-                src={`http://localhost:5000/${current.cover_path}`}
+                src={current.cover_path && !current.cover_path.includes('/') ? `http://localhost:5000/cover/${current.cover_path}` : `http://localhost:5000/${current.cover_path}`}
                 alt={current.title}
                 className="w-full h-full object-cover pointer-events-none"
               />

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { type Song } from "./Categories";
 import { useState, useEffect } from "react";
 
@@ -66,7 +67,22 @@ export default function TrackDetails({ song }: { song?: Song }) {
               <p className="text-fg-secondary text-base">
                 by{" "}
                 <span className="text-accent font-medium">
-                  {song?.artists || "Unknown Artist"}
+                  {song?.artists && song?.artist_usernames 
+                    ? song.artists.split(',').map((name, i, arr) => {
+                        const trimmedName = name.trim();
+                        const artistUsername = song.artist_usernames.split(',')[i]?.trim();
+                        
+                        if (!artistUsername) return <span key={i}>{trimmedName}{i < arr.length - 1 && <span className="text-fg-muted mr-1.5">,</span>}</span>;
+
+                        return (
+                          <span key={artistUsername}>
+                            <Link to={`/profile/${artistUsername}`} className="hover:text-accent-light transition-colors no-underline inline-block">{trimmedName}</Link>
+                            {i < arr.length - 1 && <span className="text-fg-muted mr-1.5">,</span>}
+                          </span>
+                        );
+                      })
+                    : "Various Artists"
+                  }
                 </span>
               </p>
             </div>
@@ -138,7 +154,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
             </button>
           </div>
         </div>
-      </div>
+     </div>
     </section>
   );
 }
