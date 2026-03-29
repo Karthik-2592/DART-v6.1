@@ -11,6 +11,7 @@ import contributorRoutes from "./routes/contributorRoutes.js";
 import favoriteRoutes from "./routes/favoriteRoutes.js";
 import playlistRoutes from "./routes/playlistRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +40,7 @@ app.use("/contributors", contributorRoutes);
 app.use("/favorites", favoriteRoutes);
 app.use("/playlists", playlistRoutes);
 app.use("/users", followRoutes); // Mount at /users since it covers /users/:username/follow
+app.use("/comments", commentRoutes);
 
 // Base Error Handler
 app.use((err, req, res, next) => {

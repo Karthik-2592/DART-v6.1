@@ -14,7 +14,7 @@ export default function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [user, setUser] = useState<{ username: string; displayName: string; description?: string; profile_picture?: string } | null>(() => {
-    const saved = sessionStorage.getItem("soundshare_user");
+    const saved = sessionStorage.getItem("dart_v6_1_user");
     return saved ? JSON.parse(saved) : { username: "admin", displayName: "Administrator" };
   });
   const [targetUser, setTargetUser] = useState<{ username: string; displayName: string; description?: string; profile_picture?: string } | null>(null);
@@ -98,6 +98,19 @@ export default function ProfilePage() {
   const [allFollowing, setAllFollowing] = useState<any[]>([]);
   const [expandedPlaylistId, setExpandedPlaylistId] = useState<number | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type: "danger" | "warning";
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    type: "warning"
+  });
 
   const editModalRef = useRef<HTMLDivElement>(null);
   const editOverlayRef = useRef<HTMLDivElement>(null);
@@ -322,16 +335,69 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteSong = (songId: number) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete track?",
+      message: "Are you sure you want to delete this track? This action cannot be undone.",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/songs?id=${songId}`, { method: "DELETE" });
+          if (res.ok) {
+            setUploadedSongs(prev => prev.filter(s => s.id !== songId));
+            setConfirmDialog(p => ({ ...p, isOpen: false }));
+          } else {
+            const data = await res.json();
+            setConfirmDialog({
+              isOpen: true,
+              title: "Error",
+              message: data.error || "Failed to delete song",
+              type: "danger",
+              onConfirm: () => setConfirmDialog(p => ({ ...p, isOpen: false }))
+            });
+          }
+        } catch (err) { console.error(err); }
+      }
+    });
+  };
+
+  const handleDeletePlaylist = (plName: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete playlist?",
+      message: `Are you sure you want to delete the playlist "${plName}"?`,
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`http://localhost:5000/playlists?name=${encodeURIComponent(plName)}&creator=${user?.username}`, { method: "DELETE" });
+          if (res.ok) {
+            setPlaylists(prev => prev.filter(p => p.name !== plName));
+            setConfirmDialog(p => ({ ...p, isOpen: false }));
+          } else {
+            const data = await res.json();
+            setConfirmDialog({
+              isOpen: true,
+              title: "Error",
+              message: data.error || "Failed to delete playlist",
+              type: "danger",
+              onConfirm: () => setConfirmDialog(p => ({ ...p, isOpen: false }))
+            });
+          }
+        } catch (err) { console.error(err); }
+      }
+    });
+  };
+
   /* ── Tab: Profile ── */
   const renderProfileTab = () => {
 
     const filteredFollowing = allFollowing.filter(u =>
-      u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
     const filteredFollowers = allFollowers.filter(u =>
-      u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -417,9 +483,14 @@ export default function ProfilePage() {
               <div key={song.id} className="relative group/card transition-all duration-300">
                 <CategoryCard index={i} song={song} />
                 {isSelf && (
-                  <button onClick={(e) => { e.stopPropagation(); setModal({ mode: "edit-song", data: song }); }} className="absolute bottom-16 right-3 w-8 h-8 rounded-lg bg-accent text-white opacity-0 translate-y-2 group-hover/card:opacity-100 group-hover/card:translate-y-0 transition-all duration-300 hover:scale-110 active:scale-95 z-10 flex items-center justify-center">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.571L16.732 3.732z" /></svg>
-                  </button>
+                  <div className="absolute bottom-16 right-3 flex gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); setModal({ mode: "edit-song", data: song }); }} className="w-8 h-8 rounded-lg bg-accent text-white opacity-0 translate-y-2 group-hover/card:opacity-100 group-hover/card:translate-y-0 transition-all duration-300 hover:scale-110 active:scale-95 z-10 flex items-center justify-center border-none cursor-pointer shadow-lg shadow-accent/20">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.571L16.732 3.732z" /></svg>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDeleteSong(song.id); }} className="w-8 h-8 rounded-lg bg-red-500 text-white opacity-0 translate-y-2 group-hover/card:opacity-100 group-hover/card:translate-y-0 transition-all duration-300 hover:scale-110 active:scale-95 z-10 flex items-center justify-center border-none cursor-pointer shadow-lg shadow-red-500/20">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -453,17 +524,24 @@ export default function ProfilePage() {
                   <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[0.65rem] text-fg-muted uppercase">{pl.songs.length} Tracks</span>
                 </div>
                 {isSelf && (
-                  <button onClick={() => setModal({ mode: "edit-playlist", data: pl })} className="p-2 rounded-lg bg-white/5 border border-white/10 text-fg-muted hover:text-white transition-all">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.571L16.732 3.732z" /></svg>
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => setModal({ mode: "edit-playlist", data: pl })} className="p-2 rounded-lg bg-white/5 border border-white/10 text-fg-muted hover:text-white transition-all cursor-pointer">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.571L16.732 3.732z" /></svg>
+                    </button>
+                    <button onClick={() => handleDeletePlaylist(pl.name)} className="p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
                 )}
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 overflow-hidden transition-all duration-500">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6 transition-all duration-500">
                 {display.map((s: any, i: number) => <CategoryCard key={s.id} index={i} song={s} contextSongs={pl.songs} />)}
                 {pl.songs.length > 5 && (
-                  <button onClick={() => setExpandedPlaylistId(isExp ? null : pl.id)} className="w-full aspect-[4/5] bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-2 hover:border-accent text-fg-muted hover:text-accent transition-all group/toggle">
-                    <div className={`w-10 h-10 rounded-full border border-current flex items-center justify-center transition-transform duration-300 ${isExp ? 'rotate-45' : ''}`}>+</div>
-                    <span className="text-[10px] font-bold uppercase">{isExp ? 'Show Less' : 'Show All'}</span>
+                  <button onClick={() => setExpandedPlaylistId(isExp ? null : pl.id)} className="w-full aspect-[4/5] bg-white/5 border border-dashed border-white/10 flex flex-col items-center justify-center gap-2 hover:border-accent text-fg-muted hover:text-accent transition-all group/toggle border-none cursor-pointer">
+                    <div className={`w-10 h-10 rounded-full border border-current flex items-center justify-center transition-transform duration-300 ${isExp ? 'rotate-180' : ''}`}>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExp ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} /></svg>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{isExp ? 'Show Less' : 'Show More'}</span>
                   </button>
                 )}
               </div>
@@ -747,7 +825,7 @@ export default function ProfilePage() {
                       if (data.profile_picture || displayName) {
                         const updated = { ...user, displayName: displayName || user.displayName, profile_picture: data.profile_picture || user.profile_picture };
                         setUser(updated);
-                        sessionStorage.setItem("soundshare_user", JSON.stringify(updated));
+                        sessionStorage.setItem("dart_v6_1_user", JSON.stringify(updated));
                       }
                     } catch (err) { console.error(err); }
                   }
@@ -777,11 +855,27 @@ export default function ProfilePage() {
                 onClick={async () => {
                   if (user?.username) {
                     try {
-                      await fetch(`http://localhost:5000/users?username=${user.username}`, { method: "DELETE" });
-                      setUser(null);
+                      const res = await fetch(`http://localhost:5000/users?username=${user.username}`, { 
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ password: deletePass })
+                      });
+                      if (res.ok) {
+                        setUser(null);
+                        navigate("/");
+                      } else {
+                        const data = await res.json();
+                        setConfirmDialog({
+                          isOpen: true,
+                          title: "Deletion Failed",
+                          message: data.error || "Failed to delete account",
+                          type: "danger",
+                          onConfirm: () => setConfirmDialog(p => ({ ...p, isOpen: false }))
+                        });
+                        return;
+                      }
                     } catch (err) { console.error(err); }
                   }
-                  navigate("/");
                 }}
                 className="flex-[2] py-4 bg-red-500 text-white font-bold rounded-2xl disabled:opacity-30 disabled:grayscale transition-all"
               >
@@ -794,6 +888,39 @@ export default function ProfilePage() {
     }
 
     return null;
+  };
+
+  const renderConfirmDialog = () => {
+    if (!confirmDialog.isOpen) return null;
+    const isDanger = confirmDialog.type === "danger";
+
+    return (
+      <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="relative w-full max-w-sm bg-bg-card rounded-3xl border border-white/10 p-8 shadow-3xl transform animate-in zoom-in-95 duration-300">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${isDanger ? 'bg-red-500/10 text-red-500' : 'bg-accent/10 text-accent'}`}>
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">{confirmDialog.title}</h2>
+          <p className="text-sm text-fg-muted mb-8 leading-relaxed">{confirmDialog.message}</p>
+          <div className="flex gap-3">
+            <button 
+              onClick={() => setConfirmDialog(p => ({ ...p, isOpen: false }))}
+              className="flex-1 py-3 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-all cursor-pointer border-none"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={confirmDialog.onConfirm}
+              className={`flex-1 py-3 text-white font-bold rounded-xl transition-all cursor-pointer border-none shadow-lg ${isDanger ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-accent hover:bg-accent-light shadow-accent/20'}`}
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -870,6 +997,7 @@ export default function ProfilePage() {
       </main>
       <Footer />
       {renderUniversalModal()}
+      {renderConfirmDialog()}
     </div>
   );
 }

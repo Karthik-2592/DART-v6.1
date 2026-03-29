@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export default function CallToAction() {
   const [user] = useState<{ username: string; displayName: string } | null>(() => {
-    const saved = sessionStorage.getItem("soundshare_user");
+    const saved = sessionStorage.getItem("dart_v6_1_user");
     return saved ? JSON.parse(saved) : null;
   });
 

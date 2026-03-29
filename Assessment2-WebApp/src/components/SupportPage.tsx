@@ -27,7 +27,7 @@ export default function SupportPage() {
 
   /* Check auth state */
   useEffect(() => {
-    const raw = sessionStorage.getItem("soundshare_user");
+    const raw = sessionStorage.getItem("dart_v6_1_user");
     if (raw) {
       try {
         const user = JSON.parse(raw);
@@ -78,10 +78,10 @@ export default function SupportPage() {
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-1">
           <div className="w-9 h-9 rounded-[10px] bg-white/15 flex items-center justify-center text-white font-bold text-base font-[var(--font-family-heading)]">
-            S
+            D
           </div>
           <span className="text-xl font-bold font-[var(--font-family-heading)] text-white">
-            SoundShare
+            DART v6.1
           </span>
         </div>
 

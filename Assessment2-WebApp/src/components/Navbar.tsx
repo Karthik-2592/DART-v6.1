@@ -6,7 +6,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user] = useState<{ username: string; displayName: string; profile_picture?: string } | null>(() => {
-    const saved = sessionStorage.getItem("soundshare_user");
+    const saved = sessionStorage.getItem("dart_v6_1_user");
     return saved ? JSON.parse(saved) : null;
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -61,11 +61,11 @@ export default function Navbar() {
       <Link to="/" className="flex items-center gap-2 no-underline group">
         <img 
           src="/logo.svg" 
-          alt="SoundShare Logo" 
+          alt="DART v6.1 Logo" 
           className="w-10 h-10 object-contain transition-all group-hover:scale-110 [filter:brightness(0)_invert(1)]"
         />
         <span className="text-xl font-bold font-[var(--font-family-heading)] text-white group-hover:text-accent-light transition-colors">
-          SoundShare
+          DART v6.1
         </span>
       </Link>
 
@@ -153,7 +153,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => {
-                  sessionStorage.removeItem("soundshare_user");
+                  sessionStorage.removeItem("dart_v6_1_user");
                   window.location.href = "/";
                 }}
                 className="px-4 py-3 text-sm text-white/80 hover:text-red-400 hover:bg-red-400/5 no-underline transition-all flex items-center gap-3 group border-none bg-transparent cursor-pointer"

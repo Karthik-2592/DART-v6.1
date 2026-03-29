@@ -16,6 +16,7 @@ import LoginPage from "./components/LoginPage";
 import RegisterPage from "./components/RegisterPage";
 import SupportPage from "./components/SupportPage";
 import ProfilePage from "./components/ProfilePage";
+import MiniPlayer from "./components/MiniPlayer";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -62,9 +63,10 @@ function App() {
 
   return (
     <BrowserRouter>
+      <MiniPlayer />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/player" element={<MusicPlayer />} />
+        <Route path="/player/:songId?" element={<MusicPlayer />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/support" element={<SupportPage />} />

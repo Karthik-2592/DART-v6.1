@@ -1,6 +1,7 @@
 import express from 'express';
 import db from '../db.js';
 import { resolveUser, resolveSong, resolvePlaylist } from '../resolvers.js';
+import { deletePlaylist } from '../utils/deletionRoutines.js';
 
 const router = express.Router();
 
@@ -189,20 +190,15 @@ router.delete('/', async (req, res) => {
     if (!playlistId) return res.status(404).json({ error: "Playlist not found" });
 
     console.log(`[PLAYLIST] Deleting playlist: "${name}" by ${creator} (ID: ${playlistId}) and all associated records.`);
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-        db.run(`DELETE FROM playlist_songs WHERE playlist_id = ?`, [playlistId]);
-        db.run(`DELETE FROM playlists WHERE id = ?`, [playlistId], function (err) {
-            if (err) {
-                console.error(`[PLAYLIST] DB Error during playlist deletion transaction: ${err.message}`);
-                db.run("ROLLBACK");
-                return res.status(500).json({ error: err.message });
-            }
-            db.run("COMMIT");
+    deletePlaylist(playlistId, db)
+        .then(() => {
             console.log(`[PLAYLIST] Playlist ID: ${playlistId} and related data removed.`);
             res.json({ message: "Playlist and related data deleted successfully" });
+        })
+        .catch(err => {
+            console.error(`[PLAYLIST] DB Error during playlist deletion: ${err.message}`);
+            res.status(500).json({ error: err.message });
         });
-    });
 });
 
 

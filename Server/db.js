@@ -78,6 +78,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 FOREIGN KEY(follower_id) REFERENCES users(id),
                 FOREIGN KEY(following_id) REFERENCES users(id)
             )`);
+
+            db.run(`CREATE TABLE IF NOT EXISTS comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                song_id INTEGER,
+                user_id INTEGER,
+                text TEXT NOT NULL CHECK(length(text) <= 400),
+                like_count INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`);
         });
     }
 });

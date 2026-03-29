@@ -16,8 +16,13 @@ export default function Carousel() {
       .then((res) => res.json())
       .then((data: Song[]) => {
         if (data && data.length > 0) {
-          const shuffled = [...data].sort(() => 0.5 - Math.random());
-          setSongs(shuffled.slice(0, 5));
+          const sorted = [...data].sort((a, b) => {
+            if ((b.play_count || 0) !== (a.play_count || 0)) {
+              return (b.play_count || 0) - (a.play_count || 0);
+            }
+            return 0.5 - Math.random();
+          });
+          setSongs(sorted.slice(0, 5));
         }
       })
       .catch((err) => console.error("Carousel fetch error:", err));
@@ -131,7 +136,7 @@ export default function Carousel() {
           ref={cardRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          onClick={() => navigate("/player", { state: { song: current } })}
+          onClick={() => navigate(`/player/${current.id}`, { state: { song: current } })}
           className="carousel-card relative max-w-400 w-full h-full cursor-pointer bg-bg-card hover:bg-bg-card-hover rounded-[4px] flex flex-row items-stretch transition-transform"
           style={{
             "--card-theme-color": theme.color,

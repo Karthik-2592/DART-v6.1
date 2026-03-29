@@ -1,10 +1,10 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect} from "react";
 import PlaybackControls from "./PlaybackControls";
 import { type Song } from "./Categories";
+import { usePlayer } from "../context/PlayerContext";
 
 // ── Constants ──
 const NUM_BARS = 72;
-const FFT_SIZE = 16384;
 const UPDATE_INTERVAL_MS = 50;
 
 // ── Normalization tuning ──
@@ -103,10 +103,7 @@ function findPeaks(values: Float32Array): number[] {
 }
 
 export default function Visualizer({ song }: { song?: Song }) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
+  const { analyserRef } = usePlayer();
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const glowCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -131,28 +128,8 @@ export default function Visualizer({ song }: { song?: Song }) {
   const currentLightRef = useRef(100);
   const hasStartedRef = useRef(false);
 
-  // ── Lazily initialise Web Audio on first play ──
-  const ensureAudioContext = useCallback(() => {
-    if (audioCtxRef.current) return;
-    const audio = audioRef.current;
-    if (!audio) return;
+  // Global PlayerContext now manages AudioContext
 
-    const ctx = new AudioContext({ sampleRate: 44100 });
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = FFT_SIZE;
-    analyser.smoothingTimeConstant = 0.1;
-
-    const source = ctx.createMediaElementSource(audio);
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
-
-    audioCtxRef.current = ctx;
-    analyserRef.current = analyser;
-    sourceRef.current = source;
-
-    // Allocate FFT buffer once
-    fftDataRef.current = new Float32Array(analyser.frequencyBinCount);
-  }, []);
 
   // ── Render loop ──
   useEffect(() => {
@@ -182,8 +159,12 @@ export default function Visualizer({ song }: { song?: Song }) {
       if (analyser && timestamp - lastUpdateRef.current >= UPDATE_INTERVAL_MS) {
         lastUpdateRef.current = timestamp;
 
-        const data = new Float32Array(fftDataRef.current!);
-        analyser.getFloatFrequencyData(data);
+        if (!fftDataRef.current || fftDataRef.current.length !== analyser.frequencyBinCount) {
+          fftDataRef.current = new Float32Array(analyser.frequencyBinCount);
+        }
+
+        const data = fftDataRef.current;
+        analyser.getFloatFrequencyData(data as any);
 
         const minDb = analyser.minDecibels;
         const dbRange = analyser.maxDecibels - minDb;
@@ -299,32 +280,9 @@ export default function Visualizer({ song }: { song?: Song }) {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  // ── Wire up AudioContext on play events ──
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const handlePlay = () => {
-      ensureAudioContext();
-      if (audioCtxRef.current?.state === "suspended") {
-        audioCtxRef.current.resume();
-      }
-    };
-
-    audio.addEventListener("play", handlePlay);
-    return () => audio.removeEventListener("play", handlePlay);
-  }, [ensureAudioContext]);
-
-  const audioSrc = song 
-    ? (song.audio_path && !song.audio_path.includes('/') 
-        ? `http://localhost:5000/audio/${encodeURIComponent(song.audio_path)}` 
-        : `http://localhost:5000/${song.audio_path.split('/').map(encodeURIComponent).join('/')}`)
-    : "";
 
   return (
     <section className="flex justify-center w-full">
-      <audio ref={audioRef} src={audioSrc} preload="metadata" crossOrigin="anonymous" />
-
       <div
         className="w-full rounded-[3px] flex flex-col justify-between relative"
         style={{ height: "900px" }}
@@ -355,7 +313,7 @@ export default function Visualizer({ song }: { song?: Song }) {
 
         {/* Playback controls */}
         <div className="w-full h-42 bg-transparent px-8 pb-8 z-10">
-          <PlaybackControls audioRef={audioRef} song={song} />
+          <PlaybackControls />
         </div>
       </div>
     </section>

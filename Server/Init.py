@@ -51,6 +51,7 @@ conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 # Drop old tables if they exist (reset)
+cursor.execute("DROP TABLE IF EXISTS comments")
 cursor.execute("DROP TABLE IF EXISTS user_follows")
 cursor.execute("DROP TABLE IF EXISTS song_play_counts")
 cursor.execute("DROP TABLE IF EXISTS playlist_songs")
@@ -136,6 +137,19 @@ CREATE TABLE user_follows (
     PRIMARY KEY (follower_id, following_id),
     FOREIGN KEY(follower_id) REFERENCES users(id),
     FOREIGN KEY(following_id) REFERENCES users(id)
+);
+""")
+
+cursor.execute("""
+CREATE TABLE comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    song_id INTEGER,
+    user_id INTEGER,
+    text TEXT NOT NULL CHECK(length(text) <= 400),
+    like_count INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 """)
 

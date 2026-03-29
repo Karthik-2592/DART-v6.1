@@ -182,7 +182,7 @@ export default function RegisterPage() {
       }
 
       /* Store result in sessionStorage */
-      sessionStorage.setItem("soundshare_user", JSON.stringify(data));
+      sessionStorage.setItem("dart_v6_1_user", JSON.stringify(data));
       navigate("/");
     } catch (err) {
       console.error(err);
@@ -206,11 +206,11 @@ export default function RegisterPage() {
         <div className="flex items-center justify-center gap-2 mb-1">
           <img 
             src="/logo.svg" 
-            alt="SoundShare Logo" 
+            alt="DART v6.1 Logo" 
             className="w-9 h-9 object-contain [filter:brightness(0)_invert(1)]" 
           />
           <span className="text-xl font-bold font-[var(--font-family-heading)] text-white">
-            SoundShare
+            DART v6.1
           </span>
         </div>
 

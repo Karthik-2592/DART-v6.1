@@ -1,17 +1,19 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGenreTheme } from "../utils/genreTheme";
 import { type Song } from "./Categories";
 
-export default function PlaylistQueue() {
+export default function PlaylistQueue({ contextSongs: contextSongsProp }: { contextSongs?: Song[] }) {
   const [songs, setSongs] = useState<Song[]>([]);
   const [startIndex, setStartIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const { songId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   
   const currentSong = location.state?.song as Song | undefined;
-  const contextSongs = location.state?.contextSongs as Song[] | undefined;
+  const contextSongs = contextSongsProp || location.state?.contextSongs as Song[] | undefined;
+  const activeId = songId ? parseInt(songId) : currentSong?.id;
 
   useEffect(() => {
     fetch("http://localhost:5000/songs")
@@ -23,16 +25,17 @@ export default function PlaylistQueue() {
   const queueSongs = useMemo(() => {
     // If contextSongs provided (from a playlist), use them primarily
     if (contextSongs && contextSongs.length > 0) {
-      return contextSongs.filter(s => s.id !== currentSong?.id).slice(0, 10);
+      return contextSongs.filter(s => s.id !== activeId).slice(0, 10);
     }
 
     if (songs.length === 0) return [];
     
     // Prioritize songs of the same genre as current song, then others
     let filtered = songs;
-    if (currentSong) {
-      const sameGenre = songs.filter(s => s.genre === currentSong.genre && s.id !== currentSong.id);
-      const others = songs.filter(s => s.genre !== currentSong.genre && s.id !== currentSong.id);
+    if (activeId) {
+      const activeSong = songs.find(s => s.id === activeId) || currentSong;
+      const sameGenre = songs.filter(s => activeSong && s.genre === activeSong.genre && s.id !== activeId);
+      const others = songs.filter(s => activeSong && s.genre !== activeSong.genre && s.id !== activeId);
       filtered = [...sameGenre, ...others];
     }
     
@@ -72,7 +75,7 @@ export default function PlaylistQueue() {
         </h3>
         <button
           onClick={() => {
-            const user = sessionStorage.getItem("soundshare_user");
+            const user = sessionStorage.getItem("dart_v6_1_user");
             if (!user) {
               alert("login to access playlist features");
               return;
@@ -108,7 +111,7 @@ export default function PlaylistQueue() {
                     key={card.id}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
-                    onClick={() => navigate("/player", { state: { song: card, contextSongs } })}
+                    onClick={() => navigate(`/player/${card.id}`, { state: { song: card, contextSongs } })}
                     className="queue-card relative shrink-0 w-[calc(50%-1rem)] h-68 bg-bg-card rounded-[4px] flex flex-row items-stretch cursor-pointer border border-border transition-transform"
                     style={{
                       "--card-theme-color": theme.color,

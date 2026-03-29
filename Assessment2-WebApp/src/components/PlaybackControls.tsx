@@ -1,12 +1,16 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { gsap } from "gsap";
+import { usePlayer } from "../context/PlayerContext";
 
 interface PlaybackControlsProps {
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  song?: any; // any to avoid complex imports here, or use existing Song
+  // Props removed since they are now derived from PlayerContext
 }
 
-export default function PlaybackControls({ audioRef, song }: PlaybackControlsProps) {
+export default function PlaybackControls({}: PlaybackControlsProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentSong: song, contextSongs, audioRef, setIsMiniPlayerOpen, lastPlayedSongIdRef, setWasPoppedOutByUser } = usePlayer();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -15,7 +19,12 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
   const [speed, setSpeed] = useState(100);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isHoveringPlayer, setIsHoveringPlayer] = useState(false);
-  const [isEntering, setIsEntering] = useState(true);
+  const [isEntering, setIsEntering] = useState(() => {
+    // If we mount and audio is already progressed, skip entering animation
+    const audio = audioRef.current;
+    if (audio && (audio.currentTime > 0 || !audio.paused)) return false;
+    return true;
+  });
   const [isDragging, setIsDragging] = useState(false);
   const [dragTime, setDragTime] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -48,13 +57,15 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     audio.addEventListener("play", handlePlay);
     audio.addEventListener("pause", handlePause);
 
-    // Initial load
+    // Initial load sync from global audio
     if (audio.readyState >= 1) {
       setDuration(audio.duration);
+      setCurrentTime(audio.currentTime);
+      setIsPlaying(!audio.paused);
     }
     
-    // Reset progress bar on load
-    audio.currentTime = 0;
+    // Only reset specifically if a NEW song is starting (handled in the other effect)
+    // Removed old audio.currentTime = 0; here
 
     return () => {
       audio.removeEventListener("timeupdate", updateTime);
@@ -73,7 +84,7 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
       .catch(err => console.error("Failed to increment global play count:", err));
 
     // 2. User-specific play count (if logged in)
-    const saved = sessionStorage.getItem("soundshare_user");
+    const saved = sessionStorage.getItem("dart_v6_1_user");
     if (saved) {
       try {
         const user = JSON.parse(saved);
@@ -85,27 +96,41 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     }
   }, [song]);
 
-  // Entrance Animation & Autoplay on song change
+  // Entrance Animation & Autoplay
   useEffect(() => {
-    if (!progressBarRef.current) return;
+    const audio = audioRef.current;
+    if (!progressBarRef.current || !audio) return;
     
+    const songId = song?.id;
+    const isReturningSameSong = lastPlayedSongIdRef.current === songId && songId !== undefined && audio.currentTime > 0;
+    
+    if (isReturningSameSong) {
+        setIsEntering(false);
+        return;
+    }
+
     setIsEntering(true);
     hasIncrementedRef.current = false;
+    lastPlayedSongIdRef.current = songId;
     
+    // Manage body classes for global site loading effect
+    document.body.classList.remove("has-entered");
+    document.body.classList.add("is-entering");
+
     gsap.fromTo(
       progressBarRef.current,
       { width: "0%" },
       {
         width: "100%",
-        duration: 1.2,
+        duration: 0.8,
         ease: "power2.inOut",
         onComplete: () => {
           document.body.classList.remove("is-entering");
           document.body.classList.add("has-entered");
           setIsEntering(false);
-          const audio = audioRef.current;
+          
           if (audio) {
-            // Autoplay on load
+            // New Track start reset
             audio.currentTime = 0;
             audio.play()
               .then(() => incrementPlayCount())
@@ -114,7 +139,7 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
         },
       }
     );
-  }, [song, audioRef, incrementPlayCount]);
+  }, [song, audioRef, incrementPlayCount, lastPlayedSongIdRef]);
 
   // Close settings when clicking outside
   useEffect(() => {
@@ -156,6 +181,31 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
       );
     }
   }, []);
+
+  const handleNext = useCallback(() => {
+    if (!contextSongs || !song || contextSongs.length === 0) return;
+    const currentIndex = contextSongs.findIndex(s => s.id === song.id);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % contextSongs.length;
+    const nextSong = contextSongs[nextIndex];
+    navigate(`/player/${nextSong.id}`, { state: { song: nextSong, contextSongs } });
+  }, [contextSongs, song, navigate]);
+
+  const handlePrev = useCallback(() => {
+    if (!contextSongs || !song || contextSongs.length === 0) return;
+    const currentIndex = contextSongs.findIndex(s => s.id === song.id);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + contextSongs.length) % contextSongs.length;
+    const prevSong = contextSongs[prevIndex];
+    navigate(`/player/${prevSong.id}`, { state: { song: prevSong, contextSongs } });
+  }, [contextSongs, song, navigate]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.addEventListener("ended", handleNext);
+    return () => audio.removeEventListener("ended", handleNext);
+  }, [audioRef, handleNext]);
 
   const calculateTimeFromX = useCallback((clientX: number) => {
     const bar = progressBarRef.current?.parentElement;
@@ -223,6 +273,35 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
+  const handleDownload = useCallback(async () => {
+    if (!audioRef.current?.src || !song) return;
+    try {
+      const response = await fetch(audioRef.current.src);
+      if (!response.ok) throw new Error("Network response was not ok");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${song.title || "Track"} - ${song.artists || "Artist"}.mp3`;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setSettingsOpen(false);
+    } catch (err) {
+      console.error("Download failed:", err);
+      // Fallback
+      const a = document.createElement("a");
+      a.href = audioRef.current.src;
+      a.download = `${song.title || "Track"}.mp3`;
+      a.target = "_blank";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  }, [audioRef, song]);
+
   return (
     <section
       className="w-full"
@@ -266,8 +345,8 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
 
         {/* ── Controls row ── */}
         <div className="flex items-center justify-between">
-          {/* Left controls - Fullscreen Toggle */}
-          <div className="flex-1 hide-on-enter flex items-center justify-start">
+          {/* Left controls - Fullscreen Toggle & Mini-Player */}
+          <div className="flex-1 hide-on-enter flex items-center justify-start gap-3">
             <button
               onClick={toggleFullscreen}
               className="player-btn w-10 h-10 rounded-full bg-bg-card-hover border border-border flex items-center justify-center cursor-pointer group hover:border-accent/50 transition-all duration-300"
@@ -283,10 +362,54 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
                 </svg>
               )}
             </button>
+
+            {/* Pop to Mini-Player */}
+            {!location.pathname.startsWith("/player") && (
+              <button
+                onClick={() => setIsMiniPlayerOpen(true)}
+                className="player-btn w-10 h-10 rounded-full bg-bg-card-hover border border-border flex items-center justify-center cursor-pointer group hover:border-accent/50 transition-all duration-300"
+                title="Pop to mini-player window"
+                style={{ display: "none" }} // Hide on non-player routes visually if they don't use PlaybackControls, but actually PlaybackControls is only in MusicPlayer right now.
+              >
+                  <svg className="w-4 h-4 text-fg-secondary group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+              </button>
+            )}
+
+            {location.pathname.startsWith("/player") && (
+              <button
+                onClick={() => {
+                  setWasPoppedOutByUser(true);
+                  setIsMiniPlayerOpen(true);
+                  navigate("/"); 
+                }}
+                className="player-btn w-10 h-10 rounded-full bg-bg-card-hover border border-border flex items-center justify-center cursor-pointer group hover:border-accent/50 transition-all duration-300"
+                title="Pop to mini-player window"
+              >
+                  <svg className="w-4 h-4 text-fg-secondary group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+              </button>
+            )}
+            
           </div>
 
           {/* Center controls */}
           <div className="flex items-center gap-5">
+            {/* Prev */}
+            {contextSongs && contextSongs.length > 0 && (
+              <button
+                onClick={handlePrev}
+                className="hide-on-enter player-btn w-10 h-10 rounded-full bg-transparent border border-border flex items-center justify-center cursor-pointer group hover:border-accent/40 transition-all duration-300"
+                title="Previous Track"
+              >
+                <svg className="w-5 h-5 text-fg-secondary group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
             {/* Rewind */}
             <button
               onClick={handleRewind}
@@ -353,6 +476,19 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
                 />
               </svg>
             </button>
+
+            {/* Next */}
+            {contextSongs && contextSongs.length > 0 && (
+              <button
+                onClick={handleNext}
+                className="hide-on-enter player-btn w-10 h-10 rounded-full bg-transparent border border-border flex items-center justify-center cursor-pointer group hover:border-accent/40 transition-all duration-300"
+                title="Next Track"
+              >
+                <svg className="w-5 h-5 text-fg-secondary group-hover:text-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Right controls */}
@@ -482,6 +618,18 @@ export default function PlaybackControls({ audioRef, song }: PlaybackControlsPro
                       <div className="text-xs text-fg-muted/50 italic">
                         Coming soon…
                       </div>
+                    </div>
+                    
+                    <div className="pt-3 border-t border-border mt-3">
+                      <button
+                        onClick={handleDownload}
+                        className="w-full flex items-center justify-center gap-2 text-xs text-white bg-accent/90 hover:bg-accent font-medium py-2 rounded-lg transition-colors cursor-pointer shadow-md"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Song
+                      </button>
                     </div>
                   </div>
                 </div>

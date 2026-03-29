@@ -5,6 +5,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import db from '../db.js';
 import { resolveSong } from '../resolvers.js';
+import { deleteSong } from '../utils/deletionRoutines.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,6 +151,29 @@ router.get('/search', (req, res) => {
     db.all(query, [searchParam, searchParam, searchParam, searchParam], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+// GET /songs/:id - Fetch a single song by ID
+router.get('/:id', (req, res) => {
+    const { id } = req.params;
+    if (isNaN(parseInt(id))) return res.status(400).json({ error: "Invalid song ID" });
+
+    const query = `
+        SELECT s.id, s.title, s.genre, s.release_year, s.cover_path, s.audio_path, s.play_count,
+               GROUP_CONCAT(u.display_name, ', ') AS artists,
+               GROUP_CONCAT(u.username, ', ') AS artist_usernames
+        FROM songs s
+        LEFT JOIN song_contributors sc ON s.id = sc.song_id
+        LEFT JOIN users u ON sc.user_id = u.id
+        WHERE s.id = ?
+        GROUP BY s.id
+    `;
+    console.log(`[SONG] Fetching metadata for Track ID: ${id}`);
+    db.get(query, [id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!row) return res.status(404).json({ error: "Song not found" });
+        res.json(row);
     });
 });
 
@@ -311,6 +335,20 @@ router.post('/play', async (req, res) => {
             res.json({ message: "Global play count incremented", play_count: row ? row.play_count : undefined });
         });
     });
+});
+
+// DELETE /songs?id=:id
+router.delete('/', (req, res) => {
+    const { id } = req.query;
+    if (!id) return res.status(400).json({ error: "Query parameter 'id' is required for deletion" });
+
+    console.log(`[SONG] Deleting track ID: ${id}`);
+    deleteSong(id, db)
+        .then(() => res.json({ message: "Song deleted successfully" }))
+        .catch(err => {
+            console.error(`[SONG] DB Error deleting song ${id}: ${err.message}`);
+            res.status(500).json({ error: err.message });
+        });
 });
 
 export default router;

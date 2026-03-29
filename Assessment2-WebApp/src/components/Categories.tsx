@@ -10,7 +10,8 @@ export interface Song {
   cover_path: string;
   audio_path: string;
   artists: string;
-  artist_usernames: string;
+  artist_usernames?: string;
+  play_count?: number;
 }
 
 interface Genre {
@@ -38,7 +39,7 @@ export function CategoryCard({ index, song, genreName, contextSongs }: { index: 
 
   return (
     <button
-      onClick={() => song && navigate("/player", { state: { song, contextSongs } })}
+      onClick={() => song && navigate(`/player/${song.id}`, { state: { song, contextSongs } })}
       className={`card-trace bg-bg-card w-full aspect-[4/5] flex flex-col items-stretch mx-auto ${song ? "cursor-pointer hover:bg-bg-card-hover" : "cursor-default opacity-50"}`}
       disabled={!song}
       style={{
@@ -86,8 +87,13 @@ function GenreSection({ genre, songs }: { genre: Genre, songs: Song[] }) {
   // Select up to 5 random songs for this genre
   const displaySongs = useMemo(() => {
     const genreSongs = songs.filter(s => s.genre.toLowerCase() === genre.name.toLowerCase());
-    if (genreSongs.length <= 5) return genreSongs;
-    return [...genreSongs].sort(() => 0.5 - Math.random()).slice(0, 5);
+    const sorted = [...genreSongs].sort((a, b) => {
+      if ((b.play_count || 0) !== (a.play_count || 0)) {
+        return (b.play_count || 0) - (a.play_count || 0);
+      }
+      return 0.5 - Math.random();
+    });
+    return sorted.slice(0, 5);
   }, [genre.name, songs]);
 
   if (displaySongs.length === 0) return null;
@@ -111,17 +117,87 @@ function GenreSection({ genre, songs }: { genre: Genre, songs: Song[] }) {
 
 export default function Categories() {
   const [songs, setSongs] = useState<Song[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [favorites, setFavorites] = useState<Song[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
   
   useEffect(() => {
+    const sessionUserStr = sessionStorage.getItem("dart_v6_1_user");
+    if (sessionUserStr) {
+      try {
+        const u = JSON.parse(sessionUserStr);
+        setUser(u);
+        
+        fetch(`http://localhost:5000/favorites/user/${u.username}`)
+          .then(res => res.json())
+          .then(data => setFavorites(data))
+          .catch(err => console.error(err));
+          
+        fetch(`http://localhost:5000/playlists/user/${u.username}`)
+          .then(res => res.json())
+          .then(data => setPlaylists(data))
+          .catch(err => console.error(err));
+      } catch(err) { console.error(err); }
+    }
+
     fetch("http://localhost:5000/songs")
       .then(res => res.json())
       .then(data => setSongs(data))
       .catch(err => console.error("Failed to fetch songs:", err));
   }, []);
 
+  const getTopSongs = (songList: Song[], max: number = 5) => {
+    return [...songList].sort((a, b) => {
+      if ((b.play_count || 0) !== (a.play_count || 0)) {
+        return (b.play_count || 0) - (a.play_count || 0);
+      }
+      return 0.5 - Math.random();
+    }).slice(0, max);
+  };
+
   return (
     <section className="content-margins pb-12">
-      <h2 className="text-2xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-10">
+      {user && playlists.length > 0 && (
+        <>
+          <h2 className="text-2xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-10 mt-8">
+            🎶 Your playlists
+          </h2>
+          {playlists.slice(0, 2).map((pl: any) => (
+             <div key={pl.id} className="mb-14">
+                <h3 className="text-xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-6 flex items-center gap-3">
+                  <span className="text-xl">💿</span>
+                  {pl.name}
+                </h3>
+                <div className="scroll-section grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const plSongs = pl.songs || [];
+                    const song = i < plSongs.length ? plSongs[i] : null;
+                    return <CategoryCard key={i} index={i} song={song} contextSongs={plSongs} />;
+                  })}
+                </div>
+             </div>
+          ))}
+        </>
+      )}
+
+      {user && favorites.length > 0 && (
+        <>
+          <h2 className="text-2xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-10 mt-8">
+            ❤️ Favorites
+          </h2>
+          <div className="mb-14">
+            <div className="scroll-section grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
+              {Array.from({ length: 5 }, (_, i) => {
+                const topFavs = getTopSongs(favorites);
+                const song = i < topFavs.length ? topFavs[i] : null;
+                return <CategoryCard key={i} index={i} song={song} contextSongs={favorites} />;
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      <h2 className="text-2xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-10 mt-8">
         🎵 Browse by Genre
       </h2>
       {genres.map((genre) => (

@@ -5,6 +5,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import db from '../db.js';
 import { resolveUser } from '../resolvers.js';
+import { deleteUser } from '../utils/deletionRoutines.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -114,19 +115,31 @@ router.put('/', upload.single('profile_picture'), async (req, res) => {
 // DELETE /users?username=:username
 router.delete('/', async (req, res) => {
     const { username } = req.query;
+    const { password } = req.body;
+
     if (!username) return res.status(400).json({ error: "Query parameter 'username' is required" });
+    if (!password) return res.status(400).json({ error: "Password is required for account deletion" });
 
-    const userId = await resolveUser(username);
-    if (!userId) return res.status(404).json({ error: "User not found" });
+    const query = `SELECT id, password FROM users WHERE username = ? COLLATE NOCASE`;
+    db.get(query, [username], async (err, user) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!user) return res.status(404).json({ error: "User not found" });
 
-    console.log(`[USER] Deleting user: ${username} (ID: ${userId})`);
-    db.run(`DELETE FROM users WHERE id = ?`, [userId], function (err) {
-        if (err) {
-            console.error(`[USER] DB Error deleting user ${username}: ${err.message}`);
-            return res.status(500).json({ error: err.message });
+        // Verify password
+        if (user.password !== password) {
+            console.warn(`[USER] Unauthorized deletion attempt for user: ${username}`);
+            return res.status(401).json({ error: "Invalid password. Deletion aborted." });
         }
-        console.log(`[USER] User "${username}" (ID: ${userId}) and associated data removed.`);
-        res.json({ message: "User deleted successfully" });
+
+        console.log(`[USER] Deleting user: ${username} (ID: ${user.id}) and cascading all data/files.`);
+        try {
+            await deleteUser(user.id, db);
+            console.log(`[USER] User "${username}" and all associated data/files successfully removed.`);
+            res.json({ message: "Account and all associated data deleted successfully" });
+        } catch (delErr) {
+            console.error(`[USER] Error during cascading deletion for ${username}: ${delErr.message}`);
+            res.status(500).json({ error: delErr.message });
+        }
     });
 });
 

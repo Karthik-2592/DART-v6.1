@@ -7,7 +7,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
 
   // Sync favorited status from backend on load
   useEffect(() => {
-    const userData = sessionStorage.getItem("soundshare_user");
+    const userData = sessionStorage.getItem("dart_v6_1_user");
     if (userData && song) {
       const user = JSON.parse(userData);
       fetch(`http://localhost:5000/favorites/user/${user.username}`)
@@ -24,7 +24,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
   }, [song]);
 
   const handleFavorite = async () => {
-    const userData = sessionStorage.getItem("soundshare_user");
+    const userData = sessionStorage.getItem("dart_v6_1_user");
     
     // Toggle state visually for both guest and logged-in
     const nextState = !favorited;

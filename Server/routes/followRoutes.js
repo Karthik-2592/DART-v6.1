@@ -94,6 +94,7 @@ router.get('/:username/followers', async (req, res) => {
         console.log(`[FOLLOW] User ${req.params.username} has ${rows.length} followers.`);
         res.json(rows);
     });
+
 });
 
 // GET /users/:username/following - List following by username
