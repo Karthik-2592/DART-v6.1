@@ -90,7 +90,7 @@ export default function MiniPlayer() {
         {/* Cover Image */}
         {currentSong.cover_path ? (
           <img
-            src={`http://localhost:5000/images/${currentSong.cover_path}`}
+            src={currentSong.cover_path && !currentSong.cover_path.includes('/') ? `http://localhost:5000/cover/${currentSong.cover_path}` : `http://localhost:5000/${currentSong.cover_path}`}
             alt={currentSong.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { CategoryCard, type Song } from "./Categories";
 import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
@@ -27,8 +28,10 @@ export default function SearchBar() {
     if (results.length > 0 && resultsRef.current) {
       gsap.fromTo(resultsRef.current,
         { opacity: 0, y: 30, filter: "blur(10px)" },
-        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "power2.out", delay: 0.05 }
+        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.5, ease: "power2.out", delay: 0.05, onComplete: () => ScrollTrigger.refresh() }
       );
+    } else {
+        ScrollTrigger.refresh();
     }
   }, [results]);
 

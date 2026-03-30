@@ -3,536 +3,752 @@
         "title": "I Know",
         "genre": "Electronic",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/3rd Prototype - I Know [NCS Release].mp3",
-        "artists": ["3rd Prototype"]
+        "cover": "storage/cover/I Know-3rdprototype.jpg",
+        "audio": "storage/audio/3rd Prototype - I Know.mp3",
+        "artists": [
+            "3rd Prototype"
+        ]
     },
     {
         "title": "By My Side",
         "genre": "Electronic",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Acejax, INX, Danilyon - By My Side (feat. Danilyon) [NCS Release].mp3",
-        "artists": ["Acejax", "INX", "Danilyon"]
+        "cover": "storage/cover/By My Side-acejax,inx,danilyon.jpg",
+        "audio": "storage/audio/Acejax, INX, Danilyon - By My Side (feat. Danilyon).mp3",
+        "artists": [
+            "Acejax",
+            "INX",
+            "Danilyon"
+        ]
     },
     {
         "title": "You & I",
         "genre": "Electronic",
         "year": 2019,
-        "cover": "",
-        "audio": "storage/audio/Alexis Donn, Culture Code - You & I [NCS Release].mp3",
-        "artists": ["Alexis Donn", "Culture Code"]
+        "cover": "storage/cover/You & I-alexisdonn,culturecode.jpg",
+        "audio": "storage/audio/Alexis Donn, Culture Code - You & I.mp3",
+        "artists": [
+            "Alexis Donn",
+            "Culture Code"
+        ]
     },
     {
         "title": "Royalty (Wiguez & Alltair Remix)",
-        "genre": "Electronic",
+        "genre": "Future Bass",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Alltair, Wiguez, Maestro Chives, Egzod - Royalty (Wiguez & Alltair Remix) [NCS Release].mp3",
-        "artists": ["Alltair", "Wiguez", "Maestro Chives", "Egzod"]
+        "cover": "storage/cover/Royalty (Wiguez & Alltair Remix)-alltair,wiguez,maestrochives,egzod.jpg",
+        "audio": "storage/audio/Alltair, Wiguez, Maestro Chives, Egzod - Royalty (Wiguez & Alltair Remix).mp3",
+        "artists": [
+            "Alltair",
+            "Wiguez",
+            "Maestro Chives",
+            "Egzod"
+        ]
     },
     {
         "title": "You",
         "genre": "Dubstep",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/Brenton Mattheus, Mendum - You [NCS Release].mp3",
-        "artists": ["Brenton Mattheus", "Mendum"]
+        "cover": "storage/cover/You-brentonmattheus,mendum.jpg",
+        "audio": "storage/audio/Brenton Mattheus, Mendum - You.mp3",
+        "artists": [
+            "Brenton Mattheus",
+            "Mendum"
+        ]
     },
     {
         "title": "Faceless",
-        "genre": "Electronic",
+        "genre": "Future Bass",
         "year": 2018,
-        "cover": "",
-        "audio": "storage/audio/Bri Tolani, Marvin Divine, Unknown Brain - Faceless [NCS Release].mp3",
-        "artists": ["Bri Tolani", "Marvin Divine", "Unknown Brain"]
+        "cover": "storage/cover/Faceless-britolani,marvindivine,unknownbrain.jpg",
+        "audio": "storage/audio/Bri Tolani, Marvin Divine, Unknown Brain - Faceless.mp3",
+        "artists": [
+            "Bri Tolani",
+            "Marvin Divine",
+            "Unknown Brain"
+        ]
     },
     {
         "title": "Seasons (Futuristik & Whogaux Remix)",
         "genre": "Electronic",
         "year": 2019,
-        "cover": "",
-        "audio": "storage/audio/Cadmium, Rival, Futuristik - Seasons (feat. Harley Bird) [Futuristik & Whogaux Remix] [NCS Release].mp3",
-        "artists": ["Cadmium", "Rival", "Futuristik"]
+        "cover": "storage/cover/Seasons (Futuristik & Whogaux Remix)-cadmium,rival,futuristik.jpg",
+        "audio": "storage/audio/Cadmium, Rival, Futuristik - Seasons (feat. Harley Bird).mp3",
+        "artists": [
+            "Cadmium",
+            "Rival",
+            "Futuristik"
+        ]
     },
     {
         "title": "H.A.Y",
         "genre": "Electronic",
         "year": 2019,
-        "cover": "",
-        "audio": "storage/audio/Clarx - H.A.Y [NCS Release].mp3",
-        "artists": ["Clarx"]
+        "cover": "storage/cover/H.A.Y-clarx.jpg",
+        "audio": "storage/audio/Clarx - H.A.Y.mp3",
+        "artists": [
+            "Clarx"
+        ]
     },
     {
         "title": "Shootin Stars",
         "genre": "Electronic",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/DDark - Shootin Stars [NCS Release].mp3",
-        "artists": ["DDark"]
+        "cover": "storage/cover/Shootin Stars-ddark.jpg",
+        "audio": "storage/audio/DDark - Shootin Stars.mp3",
+        "artists": [
+            "DDark"
+        ]
     },
     {
         "title": "Invincible",
-        "genre": "Electronic",
+        "genre": "Electro House",
         "year": 2015,
-        "cover": "",
-        "audio": "storage/audio/DEAF KEV - Invincible [NCS Release].mp3",
-        "artists": ["DEAF KEV"]
+        "cover": "storage/cover/Invincible-deafkev.jpg",
+        "audio": "storage/audio/DEAF KEV - Invincible.mp3",
+        "artists": [
+            "DEAF KEV"
+        ]
     },
     {
         "title": "Vacation",
         "genre": "Tropical House",
         "year": 2017,
-        "cover": "",
-        "audio": "storage/audio/Damon Empero ft. Veronica - Vacation [ King Step Release ] Tropical House No Copyright.mp3",
-        "artists": ["Damon Empero", "Veronica"]
+        "cover": "storage/cover/Vacation-damonempero,veronica.jpg",
+        "audio": "storage/audio/Damon Empero ft. Veronica - Vacation  Tropical House No Copyright.mp3",
+        "artists": [
+            "Damon Empero",
+            "Veronica"
+        ]
     },
     {
         "title": "Everything",
         "genre": "Electronic",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Diamond Eyes - Everything [NCS Release].mp3",
-        "artists": ["Diamond Eyes"]
+        "cover": "storage/cover/Everything-diamondeyes.jpg",
+        "audio": "storage/audio/Diamond Eyes - Everything.mp3",
+        "artists": [
+            "Diamond Eyes"
+        ]
     },
     {
         "title": "My Heart",
-        "genre": "Electronic",
+        "genre": "House",
         "year": 2014,
-        "cover": "",
-        "audio": "storage/audio/Different Heaven, EH!DE - My Heart [NCS Release].mp3",
-        "artists": ["Different Heaven", "EH!DE"]
+        "cover": "storage/cover/My Heart-differentheaven,eh!de.jpg",
+        "audio": "storage/audio/Different Heaven, EH!DE - My Heart.mp3",
+        "artists": [
+            "Different Heaven",
+            "EH!DE"
+        ]
     },
     {
         "title": "Savannah 2026",
         "genre": "Electronic",
         "year": 2026,
-        "cover": "",
-        "audio": "storage/audio/Diviners, Ren - Savannah 2026 (Japanese version) [NCS Release].mp3",
-        "artists": ["Diviners", "Ren"]
+        "cover": "storage/cover/Savannah 2026-diviners,ren.jpg",
+        "audio": "storage/audio/Diviners, Ren - Savannah 2026 (Japanese version).mp3",
+        "artists": [
+            "Diviners",
+            "Ren"
+        ]
     },
     {
         "title": "Origin",
         "genre": "Electronic",
         "year": 2018,
-        "cover": "",
-        "audio": "storage/audio/Electric Joy Ride - Origin [NCS Release].mp3",
-        "artists": ["Electric Joy Ride"]
+        "cover": "storage/cover/Origin-electricjoyride.jpg",
+        "audio": "storage/audio/Electric Joy Ride - Origin.mp3",
+        "artists": [
+            "Electric Joy Ride"
+        ]
     },
     {
         "title": "Symbolism",
         "genre": "Electronic",
         "year": 2014,
-        "cover": "",
-        "audio": "storage/audio/Electro-Light - Symbolism [NCS Release].mp3",
-        "artists": ["Electro-Light"]
+        "cover": "storage/cover/Symbolism-electro-light.jpg",
+        "audio": "storage/audio/Electro-Light - Symbolism.mp3",
+        "artists": [
+            "Electro-Light"
+        ]
     },
     {
         "title": "Migraine",
         "genre": "Electronic",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/Ellis, Anna Yvette - Migraine (feat. Anna Yvette) [NCS Release].mp3",
-        "artists": ["Ellis", "Anna Yvette"]
+        "cover": "storage/cover/Migraine-ellis,annayvette.jpg",
+        "audio": "storage/audio/Ellis, Anna Yvette - Migraine (feat. Anna Yvette).mp3",
+        "artists": [
+            "Ellis",
+            "Anna Yvette"
+        ]
     },
     {
         "title": "Spirit Of Things",
         "genre": "Electronic",
         "year": 2017,
-        "cover": "",
-        "audio": "storage/audio/Floatinurboat - Spirit Of Things [NCS Release].mp3",
-        "artists": ["Floatinurboat"]
+        "cover": "storage/cover/Spirit Of Things-floatinurboat.jpg",
+        "audio": "storage/audio/Floatinurboat - Spirit Of Things.mp3",
+        "artists": [
+            "Floatinurboat"
+        ]
     },
     {
         "title": "Holding On",
         "genre": "Electronic",
         "year": 2018,
-        "cover": "",
-        "audio": "storage/audio/Floatinurboat, Chris Linton - Holding On [NCS Release].mp3",
-        "artists": ["Floatinurboat", "Chris Linton"]
+        "cover": "storage/cover/Holding On-floatinurboat,chrislinton.jpg",
+        "audio": "storage/audio/Floatinurboat, Chris Linton - Holding On.mp3",
+        "artists": [
+            "Floatinurboat",
+            "Chris Linton"
+        ]
     },
     {
         "title": "Fractures",
         "genre": "Electronic",
         "year": 2017,
-        "cover": "",
+        "cover": "storage/cover/Fractures-illenium.jpg",
         "audio": "storage/audio/Fractures - Illenium.mp3",
-        "artists": ["Illenium"]
+        "artists": [
+            "Illenium"
+        ]
     },
     {
         "title": "Runaway",
         "genre": "Electronic",
         "year": 2019,
-        "cover": "",
+        "cover": "storage/cover/Runaway-halcyon.jpg",
         "audio": "storage/audio/Halcyon - Runaway (feat. Valentina Franco) (TARI Remix).mp3",
-        "artists": ["Halcyon"]
+        "artists": [
+            "Halcyon"
+        ]
     },
     {
         "title": "Alibi",
         "genre": "Electronic",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Heleen, Distrion - Alibi [NCS Release].mp3",
-        "artists": ["Heleen", "Distrion"]
+        "cover": "storage/cover/Alibi-heleen,distrion.jpg",
+        "audio": "storage/audio/Heleen, Distrion - Alibi.mp3",
+        "artists": [
+            "Heleen",
+            "Distrion"
+        ]
     },
     {
         "title": "High",
         "genre": "Electronic",
         "year": 2015,
-        "cover": "",
-        "audio": "storage/audio/JPB - High [NCS Release].mp3",
-        "artists": ["JPB"]
+        "cover": "storage/cover/High-jpb.jpg",
+        "audio": "storage/audio/JPB - High.mp3",
+        "artists": [
+            "JPB"
+        ]
     },
     {
         "title": "Heroes Tonight",
-        "genre": "Electronic",
+        "genre": "Progressive House",
         "year": 2015,
-        "cover": "",
-        "audio": "storage/audio/Janji, Johnning - Heroes Tonight (feat. Johnning) [NCS Release].mp3",
-        "artists": ["Janji", "Johnning"]
+        "cover": "storage/cover/Heroes Tonight-janji,johnning.jpg",
+        "audio": "storage/audio/Janji, Johnning - Heroes Tonight (feat. Johnning).mp3",
+        "artists": [
+            "Janji",
+            "Johnning"
+        ]
     },
     {
         "title": "Samurai",
-        "genre": "Electronic",
+        "genre": "Progressive House",
         "year": 2018,
-        "cover": "",
-        "audio": "storage/audio/Jim Yosef - Samurai [NCS Release].mp3",
-        "artists": ["Jim Yosef"]
+        "cover": "storage/cover/Samurai-jimyosef.jpg",
+        "audio": "storage/audio/Jim Yosef - Samurai.mp3",
+        "artists": [
+            "Jim Yosef"
+        ]
     },
     {
         "title": "Courage",
-        "genre": "Electronic",
+        "genre": "Progressive House",
         "year": 2018,
-        "cover": "",
-        "audio": "storage/audio/Jim Yosef, Anna Yvette - Courage [NCS Release].mp3",
-        "artists": ["Jim Yosef", "Anna Yvette"]
+        "cover": "storage/cover/Courage-jimyosef,annayvette.jpg",
+        "audio": "storage/audio/Jim Yosef, Anna Yvette - Courage.mp3",
+        "artists": [
+            "Jim Yosef",
+            "Anna Yvette"
+        ]
     },
     {
         "title": "Linked",
-        "genre": "Electronic",
+        "genre": "Progressive House",
         "year": 2019,
-        "cover": "",
-        "audio": "storage/audio/Jim Yosef, Anna Yvette - Linked [NCS Release].mp3",
-        "artists": ["Jim Yosef", "Anna Yvette"]
+        "cover": "storage/cover/Linked-jimyosef,annayvette.jpg",
+        "audio": "storage/audio/Jim Yosef, Anna Yvette - Linked.mp3",
+        "artists": [
+            "Jim Yosef",
+            "Anna Yvette"
+        ]
     },
     {
         "title": "WHAT THE HELL",
         "genre": "Electronic",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/Johnning - WHAT THE HELL [NCS Release].mp3",
-        "artists": ["Johnning"]
+        "cover": "storage/cover/WHAT THE HELL-johnning.jpg",
+        "audio": "storage/audio/Johnning - WHAT THE HELL.mp3",
+        "artists": [
+            "Johnning"
+        ]
     },
     {
         "title": "Never Have I Felt This",
-        "genre": "Electronic",
+        "genre": "Drum & Bass",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Koven - Never Have I Felt This [NCS Release].mp3",
-        "artists": ["Koven"]
+        "cover": "storage/cover/Never Have I Felt This-koven.jpg",
+        "audio": "storage/audio/Koven - Never Have I Felt This.mp3",
+        "artists": [
+            "Koven"
+        ]
     },
     {
         "title": "About Me",
-        "genre": "Electronic",
+        "genre": "Drum & Bass",
         "year": 2020,
-        "cover": "",
+        "cover": "storage/cover/About Me-koven,royknox.jpg",
         "audio": "storage/audio/Koven, ROY KNOX - About Me.mp3",
-        "artists": ["Koven", "ROY KNOX"]
+        "artists": [
+            "Koven",
+            "ROY KNOX"
+        ]
     },
     {
         "title": "Come And Get It (Razihel Remix)",
         "genre": "Dubstep",
         "year": 2013,
-        "cover": "",
-        "audio": "storage/audio/Krewella - Come And Get It (Razihel Remix) [Free].mp3",
-        "artists": ["Krewella"]
+        "cover": "storage/cover/Come And Get It (Razihel Remix)-krewella.jpg",
+        "audio": "storage/audio/Krewella - Come And Get It (Razihel Remix).mp3",
+        "artists": [
+            "Krewella"
+        ]
     },
     {
         "title": "Monster",
         "genre": "Electronic",
         "year": 2019,
-        "cover": "",
+        "cover": "storage/cover/Monster-lum!x,gabryponte.jpg",
         "audio": "storage/audio/LUM!X, Gabry Ponte - Monster (Official Music Video).mp3",
-        "artists": ["LUM!X", "Gabry Ponte"]
+        "artists": [
+            "LUM!X",
+            "Gabry Ponte"
+        ]
     },
     {
         "title": "Royalty",
-        "genre": "Electronic",
+        "genre": "Future Bass",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Maestro Chives, Egzod, Neoni - Royalty [NCS Release].mp3",
-        "artists": ["Maestro Chives", "Egzod", "Neoni"]
+        "cover": "storage/cover/Royalty-maestrochives,egzod,neoni.jpg",
+        "audio": "storage/audio/Maestro Chives, Egzod, Neoni - Royalty.mp3",
+        "artists": [
+            "Maestro Chives",
+            "Egzod",
+            "Neoni"
+        ]
     },
     {
         "title": "Happi",
         "genre": "Electronic",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Mangoo, bby ivy - Happi [NCS Release].mp3",
-        "artists": ["Mangoo", "bby ivy"]
+        "cover": "storage/cover/Happi-mangoo,bbyivy.jpg",
+        "audio": "storage/audio/Mangoo, bby ivy - Happi.mp3",
+        "artists": [
+            "Mangoo",
+            "bby ivy"
+        ]
     },
     {
         "title": "Stay With Me",
         "genre": "Electronic",
         "year": 2015,
-        "cover": "",
-        "audio": "storage/audio/Mendum - Stay With Me [NCS Release].mp3",
-        "artists": ["Mendum"]
+        "cover": "storage/cover/Stay With Me-mendum.jpg",
+        "audio": "storage/audio/Mendum - Stay With Me.mp3",
+        "artists": [
+            "Mendum"
+        ]
     },
     {
         "title": "Stay With Me (Krys Talk Remix)",
         "genre": "Electronic",
         "year": 2015,
-        "cover": "",
-        "audio": "storage/audio/Mendum, Krys Talk - Stay With Me (Krys Talk Remix) [NCS Release].mp3",
-        "artists": ["Mendum", "Krys Talk"]
+        "cover": "storage/cover/Stay With Me (Krys Talk Remix)-mendum,krystalk.jpg",
+        "audio": "storage/audio/Mendum, Krys Talk - Stay With Me (Krys Talk Remix).mp3",
+        "artists": [
+            "Mendum",
+            "Krys Talk"
+        ]
     },
     {
         "title": "Demons",
-        "genre": "Electronic",
+        "genre": "Hardstyle",
         "year": 2017,
-        "cover": "",
-        "audio": "storage/audio/NIVIRO - Demons [NCS Release].mp3",
-        "artists": ["NIVIRO"]
+        "cover": "storage/cover/Demons-niviro.jpg",
+        "audio": "storage/audio/NIVIRO - Demons.mp3",
+        "artists": [
+            "NIVIRO"
+        ]
     },
     {
         "title": "PLAY",
-        "genre": "Electronic",
+        "genre": "Slap House",
         "year": 2019,
-        "cover": "",
-        "audio": "storage/audio/PLAY [Alan Walker].mp3",
-        "artists": ["Alan Walker"]
+        "cover": "storage/cover/PLAY-alanwalker.jpg",
+        "audio": "storage/audio/PLAY.mp3",
+        "artists": [
+            "Alan Walker"
+        ]
     },
     {
         "title": "Girlfriend",
         "genre": "Electronic",
         "year": 2017,
-        "cover": "",
-        "audio": "storage/audio/Paul Flint, Phil Lees, LW - Girlfriend (feat. LW) [NCS Release].mp3",
-        "artists": ["Paul Flint", "Phil Lees", "LW"]
+        "cover": "storage/cover/Girlfriend-paulflint,phillees,lw.jpg",
+        "audio": "storage/audio/Paul Flint, Phil Lees, LW - Girlfriend (feat. LW).mp3",
+        "artists": [
+            "Paul Flint",
+            "Phil Lees",
+            "LW"
+        ]
     },
     {
         "title": "When I'm Gone",
-        "genre": "Electronic",
+        "genre": "Future Bass",
         "year": 2017,
-        "cover": "",
-        "audio": "storage/audio/Phantom Sage - When I'm Gone [NCS Release].mp3",
-        "artists": ["Phantom Sage"]
+        "cover": "storage/cover/When I'm Gone-phantomsage.jpg",
+        "audio": "storage/audio/Phantom Sage - When I'm Gone.mp3",
+        "artists": [
+            "Phantom Sage"
+        ]
     },
     {
         "title": "PULL THE TRIGGER",
         "genre": "Phonk",
         "year": 2022,
-        "cover": "",
+        "cover": "storage/cover/PULL THE TRIGGER-raizhell.jpg",
         "audio": "storage/audio/RAIZHELL - PULL THE TRIGGER (PHONK).mp3",
-        "artists": ["RAIZHELL"]
+        "artists": [
+            "RAIZHELL"
+        ]
     },
     {
         "title": "Blue Eyed Demon",
-        "genre": "Electronic",
+        "genre": "Dubstep",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/ROY KNOX - Blue Eyed Demon [NCS Release].mp3",
-        "artists": ["ROY KNOX"]
+        "cover": "storage/cover/Blue Eyed Demon-royknox.jpg",
+        "audio": "storage/audio/ROY KNOX - Blue Eyed Demon.mp3",
+        "artists": [
+            "ROY KNOX"
+        ]
     },
     {
         "title": "Shining",
-        "genre": "Electronic",
+        "genre": "Dubstep",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/ROY KNOX - Shining [NCS Release].mp3",
-        "artists": ["ROY KNOX"]
+        "cover": "storage/cover/Shining-royknox.jpg",
+        "audio": "storage/audio/ROY KNOX - Shining.mp3",
+        "artists": [
+            "ROY KNOX"
+        ]
     },
     {
         "title": "Wonder",
-        "genre": "Electronic",
+        "genre": "Future Bass",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Rarin, Bri Tolani, Unknown Brain - Wonder (ft. Rarin & Bri Tolani) [NCS Release].mp3",
-        "artists": ["Rarin", "Bri Tolani", "Unknown Brain"]
+        "cover": "storage/cover/Wonder-rarin,britolani,unknownbrain.jpg",
+        "audio": "storage/audio/Rarin, Bri Tolani, Unknown Brain - Wonder (ft. Rarin & Bri Tolani).mp3",
+        "artists": [
+            "Rarin",
+            "Bri Tolani",
+            "Unknown Brain"
+        ]
     },
     {
         "title": "Hollow Life",
         "genre": "Electronic",
         "year": 2018,
-        "cover": "",
-        "audio": "storage/audio/Ratfoot, Tritan - Hollow Life [NCS Release].mp3",
-        "artists": ["Ratfoot", "Tritan"]
+        "cover": "storage/cover/Hollow Life-ratfoot,tritan.jpg",
+        "audio": "storage/audio/Ratfoot, Tritan - Hollow Life.mp3",
+        "artists": [
+            "Ratfoot",
+            "Tritan"
+        ]
     },
     {
         "title": "Vision pt. II",
         "genre": "Electronic",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/She Is Jules, Lost Sky - Vision pt. II [NCS Release].mp3",
-        "artists": ["She Is Jules", "Lost Sky"]
+        "cover": "storage/cover/Vision pt. II-sheisjules,lostsky.jpg",
+        "audio": "storage/audio/She Is Jules, Lost Sky - Vision pt. II.mp3",
+        "artists": [
+            "She Is Jules",
+            "Lost Sky"
+        ]
     },
     {
         "title": "Make A Stand",
         "genre": "Electronic",
         "year": 2016,
-        "cover": "",
-        "audio": "storage/audio/Speo, Budobo - Make A Stand (feat. Budobo) [NCS Release].mp3",
-        "artists": ["Speo", "Budobo"]
+        "cover": "storage/cover/Make A Stand-speo,budobo.jpg",
+        "audio": "storage/audio/Speo, Budobo - Make A Stand (feat. Budobo).mp3",
+        "artists": [
+            "Speo",
+            "Budobo"
+        ]
     },
     {
         "title": "Cradles",
         "genre": "Indie Pop",
         "year": 2019,
-        "cover": "",
-        "audio": "storage/audio/Sub Urban - Cradles [NCS Release].mp3",
-        "artists": ["Sub Urban"]
+        "cover": "storage/cover/Cradles-suburban.jpg",
+        "audio": "storage/audio/Sub Urban - Cradles.mp3",
+        "artists": [
+            "Sub Urban"
+        ]
     },
     {
         "title": "Save Me",
-        "genre": "Electronic",
+        "genre": "Dubstep",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Svniivan, Tim Beeren, ROY KNOX - Save Me  [NCS Release].mp3",
-        "artists": ["Svniivan", "Tim Beeren", "ROY KNOX"]
+        "cover": "storage/cover/Save Me-svniivan,timbeeren,royknox.jpg",
+        "audio": "storage/audio/Svniivan, Tim Beeren, ROY KNOX - Save Me .mp3",
+        "artists": [
+            "Svniivan",
+            "Tim Beeren",
+            "ROY KNOX"
+        ]
     },
     {
         "title": "Syndicate",
-        "genre": "Electronic",
+        "genre": "Dubstep",
         "year": 2011,
-        "cover": "",
+        "cover": "storage/cover/Syndicate-skrillex.jpg",
         "audio": "storage/audio/Syndicate-Skrillex.mp3",
-        "artists": ["Skrillex"]
+        "artists": [
+            "Skrillex"
+        ]
     },
     {
         "title": "Fearless pt. II",
         "genre": "Electronic",
         "year": 2017,
-        "cover": "",
-        "audio": "storage/audio/TULE, Chris Linton - Fearless pt. II (feat. Chris Linton) [NCS Release].mp3",
-        "artists": ["TULE", "Chris Linton"]
+        "cover": "storage/cover/Fearless pt. II-tule,chrislinton.jpg",
+        "audio": "storage/audio/TULE, Chris Linton - Fearless pt. II (feat. Chris Linton).mp3",
+        "artists": [
+            "TULE",
+            "Chris Linton"
+        ]
     },
     {
         "title": "Sunburst",
         "genre": "Progressive House",
         "year": 2014,
-        "cover": "",
+        "cover": "storage/cover/Sunburst-tobu,itro.jpg",
         "audio": "storage/audio/Tobu & Itro - Sunburst.mp3",
-        "artists": ["Tobu", "Itro"]
+        "artists": [
+            "Tobu",
+            "Itro"
+        ]
     },
     {
         "title": "Hope",
-        "genre": "Electronic",
+        "genre": "Progressive House",
         "year": 2014,
-        "cover": "",
+        "cover": "storage/cover/Hope-tobu.jpg",
         "audio": "storage/audio/Tobu - Hope (Original Mix).mp3",
-        "artists": ["Tobu"]
+        "artists": [
+            "Tobu"
+        ]
     },
     {
         "title": "Why Do I?",
-        "genre": "Electronic",
+        "genre": "Future Bass",
         "year": 2018,
         "cover": "",
-        "audio": "storage/audio/Unknown Brain, Bri Tolani - Why Do I_ (feat. Bri Tolani) [NCS Release].mp3",
-        "artists": ["Unknown Brain", "Bri Tolani"]
+        "audio": "storage/audio/Unknown Brain, Bri Tolani - Why Do I_ (feat. Bri Tolani).mp3",
+        "artists": [
+            "Unknown Brain",
+            "Bri Tolani"
+        ]
     },
     {
         "title": "All I Need",
         "genre": "Electronic",
         "year": 2016,
-        "cover": "",
-        "audio": "storage/audio/Vanze, Balco, Fransis Derelle, Brenton Mattheus - All I Need (feat Brenton Mattheus) [NCS Release].mp3",
-        "artists": ["Vanze", "Balco", "Fransis Derelle", "Brenton Mattheus"]
+        "cover": "storage/cover/All I Need-vanze,balco,fransisderelle,brentonmattheus.jpg",
+        "audio": "storage/audio/Vanze, Balco, Fransis Derelle, Brenton Mattheus - All I Need (feat Brenton Mattheus).mp3",
+        "artists": [
+            "Vanze",
+            "Balco",
+            "Fransis Derelle",
+            "Brenton Mattheus"
+        ]
     },
     {
         "title": "Breakdown",
         "genre": "Electronic",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/Xaia, Rain Man, Oly - Breakdown [NCS Release].mp3",
-        "artists": ["Xaia", "Rain Man", "Oly"]
+        "cover": "storage/cover/Breakdown-xaia,rainman,oly.jpg",
+        "audio": "storage/audio/Xaia, Rain Man, Oly - Breakdown.mp3",
+        "artists": [
+            "Xaia",
+            "Rain Man",
+            "Oly"
+        ]
     },
     {
         "title": "Against the Sun",
         "genre": "Drumstep",
         "year": 2014,
-        "cover": "",
-        "audio": "storage/audio/[Drumstep] - Rootkit - Against the Sun (feat. Anna Yvette) [Monstercat Release].mp3",
-        "artists": ["Rootkit", "Anna Yvette"]
+        "cover": "storage/cover/Against the Sun-rootkit,annayvette.jpg",
+        "audio": "storage/audio/.mp3",
+        "artists": [
+            "Rootkit",
+            "Anna Yvette"
+        ]
     },
     {
         "title": "Clouds",
         "genre": "Electronic",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Anna Yvette, AFK - Clouds [NCS Release].mp3",
-        "artists": ["Anna Yvette", "AFK"]
+        "cover": "storage/cover/Clouds-annayvette,afk.jpg",
+        "audio": "storage/audio/Anna Yvette, AFK - Clouds.mp3",
+        "artists": [
+            "Anna Yvette",
+            "AFK"
+        ]
     },
     {
         "title": "Carry On",
         "genre": "Electronic",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/Anna Yvette, Lost Sky - Carry On [NCS Release].mp3",
-        "artists": ["Anna Yvette", "Lost Sky"]
+        "cover": "storage/cover/Carry On-annayvette,lostsky.jpg",
+        "audio": "storage/audio/Anna Yvette, Lost Sky - Carry On.mp3",
+        "artists": [
+            "Anna Yvette",
+            "Lost Sky"
+        ]
     },
     {
         "title": "Feelings",
         "genre": "Electronic",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Azertion, Diviners - Feelings [NCS Release].mp3",
-        "artists": ["Azertion", "Diviners"]
+        "cover": "storage/cover/Feelings-azertion,diviners.jpg",
+        "audio": "storage/audio/Azertion, Diviners - Feelings.mp3",
+        "artists": [
+            "Azertion",
+            "Diviners"
+        ]
     },
     {
         "title": "Make Me Move",
         "genre": "Electronic",
         "year": 2017,
-        "cover": "",
-        "audio": "storage/audio/Culture Code, KARRA - Make Me Move (feat. KARRA) [NCS Release].mp3",
-        "artists": ["Culture Code", "KARRA"]
+        "cover": "storage/cover/Make Me Move-culturecode,karra.jpg",
+        "audio": "storage/audio/Culture Code, KARRA - Make Me Move (feat. KARRA).mp3",
+        "artists": [
+            "Culture Code",
+            "KARRA"
+        ]
     },
     {
         "title": "Hellcat",
         "genre": "Electronic",
         "year": 2015,
-        "cover": "",
-        "audio": "storage/audio/Desmeon - Hellcat [NCS Release].mp3",
-        "artists": ["Desmeon"]
+        "cover": "storage/cover/Hellcat-desmeon.jpg",
+        "audio": "storage/audio/Desmeon - Hellcat.mp3",
+        "artists": [
+            "Desmeon"
+        ]
     },
     {
         "title": "Pill",
         "genre": "Electronic",
         "year": 2018,
-        "cover": "",
-        "audio": "storage/audio/Heuse, Zeus X Crona, Emma Sameth - Pill (feat. Emma Sameth) [NCS Release].mp3",
-        "artists": ["Heuse", "Zeus X Crona", "Emma Sameth"]
+        "cover": "storage/cover/Pill-heuse,zeusxcrona,emmasameth.jpg",
+        "audio": "storage/audio/Heuse, Zeus X Crona, Emma Sameth - Pill (feat. Emma Sameth).mp3",
+        "artists": [
+            "Heuse",
+            "Zeus X Crona",
+            "Emma Sameth"
+        ]
     },
     {
         "title": "Popsicle",
         "genre": "Electronic",
         "year": 2019,
-        "cover": "",
-        "audio": "storage/audio/LFZ - Popsicle [NCS Release].mp3",
-        "artists": ["LFZ"]
+        "cover": "storage/cover/Popsicle-lfz.jpg",
+        "audio": "storage/audio/LFZ - Popsicle.mp3",
+        "artists": [
+            "LFZ"
+        ]
     },
     {
         "title": "Need You",
         "genre": "Electronic",
         "year": 2021,
-        "cover": "",
-        "audio": "storage/audio/Lost Sky - Need You [NCS Release].mp3",
-        "artists": ["Lost Sky"]
+        "cover": "storage/cover/Need You-lostsky.jpg",
+        "audio": "storage/audio/Lost Sky - Need You.mp3",
+        "artists": [
+            "Lost Sky"
+        ]
     },
     {
         "title": "Memory Lane",
-        "genre": "Electronic",
+        "genre": "Progressive House",
         "year": 2020,
-        "cover": "",
-        "audio": "storage/audio/Tobu - Memory Lane [NCS Release].mp3",
-        "artists": ["Tobu"]
+        "cover": "storage/cover/Memory Lane-tobu.jpg",
+        "audio": "storage/audio/Tobu - Memory Lane.mp3",
+        "artists": [
+            "Tobu"
+        ]
     },
     {
         "title": "Perfect 10",
+        "genre": "Future Bass",
+        "year": 2021,
+        "cover": "storage/cover/Perfect 10-unknownbrain,heathersommer,rudelies.jpg",
+        "audio": "storage/audio/Unknown Brain, Heather Sommer, RudeLies - Perfect 10 (Unknown Brain & RudeLies VIP).mp3",
+        "artists": [
+            "Unknown Brain",
+            "Heather Sommer",
+            "RudeLies"
+        ]
+    },
+    {
+        "title": "hola_1774862327333-35042544",
         "genre": "Electronic",
         "year": 2021,
         "cover": "",
-        "audio": "storage/audio/Unknown Brain, Heather Sommer, RudeLies - Perfect 10 (Unknown Brain & RudeLies VIP) [NCS Release].mp3",
-        "artists": ["Unknown Brain", "Heather Sommer", "RudeLies"]
+        "audio": "storage/audio/hola_1774862327333-35042544.mp3",
+        "artists": [
+            "Unknown"
+        ]
+    },
+    {
+        "title": "When I'm Gone",
+        "genre": "Future Bass",
+        "year": 2021,
+        "cover": "storage/cover/When I'm Gone-phantomsage.jpg",
+        "audio": "storage/audio/Phantom Sage - When I'm Gone.mp3",
+        "artists": [
+            "Phantom Sage"
+        ]
+    },
+    {
+        "title": "Robot Race (Official Visualizer) (320)",
+        "genre": "Glitch Hop",
+        "year": 2021,
+        "cover": "",
+        "audio": "storage/audio/Senbei - Robot Race (Official Visualizer) (320).mp3",
+        "artists": [
+            "Senbei"
+        ]
     }
 ]

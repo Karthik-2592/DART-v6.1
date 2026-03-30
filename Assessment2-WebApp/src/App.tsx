@@ -22,27 +22,40 @@ gsap.registerPlugin(ScrollTrigger);
 
 function LandingPage() {
   useEffect(() => {
-    const sections = document.querySelectorAll(".scroll-section");
-    sections.forEach((section) => {
-      gsap.fromTo(
-        section,
-        { opacity: 0.85, filter: "brightness(0.9)" },
-        {
-          opacity: 1,
-          filter: "brightness(1.15)",
-          duration: "0.1",
-          scrollTrigger: {
-            trigger: section,
-            start: "top 85%",
-            end: "bottom 15%",
-            scrub: 1,
-          },
-        }
-      );
+    const ctx = gsap.context(() => {
+      const initScrollTriggers = () => {
+        const sections = document.querySelectorAll(".scroll-section");
+        sections.forEach((section) => {
+          gsap.fromTo(
+            section,
+            { opacity: 0.85, filter: "brightness(0.9)" },
+            {
+              opacity: 1,
+              filter: "brightness(1.15)",
+              duration: "0.1",
+              scrollTrigger: {
+                trigger: section,
+                start: "top 85%",
+                end: "bottom 15%",
+                scrub: 1,
+                invalidateOnRefresh: true,
+              },
+            }
+          );
+        });
+      };
+
+      initScrollTriggers();
+
+      // Refresh ScrollTrigger after a short delay to account for data-driven component mounting
+      const timer = setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 500);
+
+      return () => clearTimeout(timer);
     });
-    return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-    };
+
+    return () => ctx.revert();
   }, []);
 
   return (

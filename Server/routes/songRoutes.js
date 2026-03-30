@@ -28,8 +28,13 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        const prefix = file.fieldname === 'audio' ? 'track-' : 'cover-';
-        cb(null, prefix + uniqueSuffix + ext);
+        
+        // Use title from body if available, otherwise fallback to fieldname
+        const baseName = req.body.title || (file.fieldname === 'audio' ? 'track' : 'cover');
+        const sanitizedBase = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        const finalPrefix = file.fieldname === 'audio' ? sanitizedBase : `${sanitizedBase}_cover`;
+        
+        cb(null, finalPrefix + '_' + uniqueSuffix + ext);
     }
 });
 

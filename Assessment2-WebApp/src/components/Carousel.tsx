@@ -9,6 +9,8 @@ export default function Carousel() {
   const [songs, setSongs] = useState<Song[]>([]);
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
+  const projectionRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -30,9 +32,11 @@ export default function Carousel() {
 
   useEffect(() => {
     if (songs.length > 0 && sectionRef.current) {
+      // Internal animation only for initial slide-up/scale, 
+      // let App.tsx handle the scroll-driven opacity/brightness
       gsap.fromTo(sectionRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+        { y: 15, scale: 0.98 },
+        { y: 0, scale: 1, duration: 1.2, ease: "power3.out" }
       );
     }
   }, [songs]);
@@ -62,20 +66,23 @@ export default function Carousel() {
       setActiveIndex(nextIndex);
       return;
     }
-    gsap.to(cardRef.current, {
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setActiveIndex(nextIndex);
+        // Reset wrapper
+        gsap.fromTo(wrapperRef.current,
+          { x: direction * 120, opacity: 0, scale: 0.92 },
+          { x: 0, opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" }
+        );
+      }
+    });
+
+    tl.to(wrapperRef.current, {
       x: direction * -120,
       opacity: 0,
       scale: 0.92,
       duration: 0.3,
-      ease: "power2.in",
-      onComplete: () => {
-        setActiveIndex(nextIndex);
-        gsap.fromTo(
-          cardRef.current,
-          { x: direction * 120, opacity: 0, scale: 0.92 },
-          { x: 0, opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" }
-        );
-      },
+      ease: "power2.in"
     });
   };
 
@@ -88,26 +95,33 @@ export default function Carousel() {
     const centerY = rect.height / 2;
     const rotateX = ((y - centerY) / centerY) * -4;
     const rotateY = ((x - centerX) / centerX) * 4;
-    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+    
+    const transformStr = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    card.style.transform = `${transformStr} scale(1.02)`;
+    if (projectionRef.current) {
+      projectionRef.current.style.transform = `${transformStr} scale(1.2)`;
+    }
   };
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.transform =
-      "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)";
+    const target = e.currentTarget;
+    const cardReset = "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)";
+    const projectionReset = "perspective(800px) rotateX(0deg) rotateY(0deg) scale(1.2)";
+    target.style.transform = cardReset;
+    if (projectionRef.current) {
+      projectionRef.current.style.transform = projectionReset;
+    }
   };
 
-  if (songs.length === 0) {
-    return (
-      <section className="section-margins scroll-section text-fg-primary pt-12 pb-24 opacity-0">
-        <div className="h-160" />
-      </section>
-    );
-  }
-
   const current = songs[activeIndex];
-  const theme = getGenreTheme(current.genre);
+  const theme = current ? getGenreTheme(current.genre) : getGenreTheme("Unknown");
+
   return (
-    <section ref={sectionRef} className="section-margins scroll-section text-fg-primary pt-3 pb-24 opacity-0">
+    <section ref={sectionRef} className="section-margins scroll-section text-fg-primary pt-3 pb-24 transition-all duration-1000">
+      {songs.length === 0 ? (
+        <div className="h-160 flex items-center justify-center pointer-events-none" />
+      ) : (
+        <div className="animate-[fadeIn_1.2s_ease-out]">
       <h2 className="text-2xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-21">
         🔥 Featured
       </h2>
@@ -131,70 +145,85 @@ export default function Carousel() {
           </svg>
         </button>
 
-        {/* Card */}
+        {/* Wrapper for Card and Projection */}
         <div
-          ref={cardRef}
+          ref={wrapperRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          onClick={() => navigate(`/player/${current.id}`, { state: { song: current } })}
-          className="carousel-card relative max-w-400 w-full h-full cursor-pointer bg-bg-card hover:bg-bg-card-hover rounded-[4px] flex flex-row items-stretch transition-transform"
-          style={{
-            "--card-theme-color": theme.color,
-            "--card-theme-glow": theme.glow,
-          } as React.CSSProperties}
+          className="relative max-w-400 w-full h-full cursor-pointer transition-transform duration-100 ease-out"
         >
-          {/* Card left: 1:1 image or placeholder */}
-          <div className="shrink-0 h-full aspect-square bg-[#242435] rounded-l-[4px] border-r border-border flex flex-col items-center justify-center overflow-hidden">
-            {current.cover_path ? (
-              <img
-                src={current.cover_path && !current.cover_path.includes('/') ? `http://localhost:5000/cover/${current.cover_path}` : `http://localhost:5000/${current.cover_path}`}
-                alt={current.title}
-                className="w-full h-full object-cover pointer-events-none"
-              />
-            ) : (
-              // Default Music Icon if no picture is available
-              <svg
-                className="w-16 h-16 text-fg-muted/50"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
-            )}
+          {/* Projection Background: Centered behind the cover section */}
+          <div className="absolute rounded-full h-full w-full pointer-events-none -z-10 flex items-center justify-center">
+            <div
+              ref={projectionRef}
+              className="absolute h-[120%] w-full opacity-50 z-0"
+              style={{
+                filter: "blur(300px)", // User previously set 240px, let's keep it high or use what looks best
+                transform: "translate(-50%, -50%) perspective(800px)",
+              }}
+            >
+              {current.cover_path && (
+                <img
+                  src={current.cover_path && !current.cover_path.includes('/') ? `http://localhost:5000/cover/${current.cover_path}` : `http://localhost:5000/${current.cover_path}`}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
           </div>
 
-          {/* Card right: Details */}
-          <div className="flex-1 flex flex-col justify-center min-w-0 p-8 z-10">
-            {/* 1. Name of the song in Small Caps */}
-            <h3 className="text-3xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-2 line-clamp-1 truncate" style={{ fontVariant: "small-caps" }}>
-              {current.title || "Unknown Title"}
-            </h3>
+          {/* Main Card */}
+          <div
+            ref={cardRef}
+            onClick={() => navigate(`/player/${current.id}`, { state: { song: current } })}
+            className="carousel-card relative w-full h-full bg-bg-card hover:bg-bg-card-hover rounded-[4px] flex flex-row items-stretch transition-transform"
+            style={{
+              "--card-theme-color": theme.color,
+              "--card-theme-glow": theme.glow,
+            } as React.CSSProperties}
+          >
+            {/* Card left: 1:1 image or placeholder */}
+            <div className="shrink-0 h-full aspect-square bg-[#242435] rounded-l-[4px] border-r border-border flex flex-col items-center justify-center overflow-hidden">
+              {current.cover_path ? (
+                <img
+                  src={current.cover_path && !current.cover_path.includes('/') ? `http://localhost:5000/cover/${current.cover_path}` : `http://localhost:5000/${current.cover_path}`}
+                  alt={current.title}
+                  className="w-full h-full object-cover pointer-events-none"
+                />
+              ) : (
+                <svg
+                  className="w-16 h-16 text-fg-muted/50"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+              )}
+            </div>
 
-            {/* 2. Name of the artist */}
-            <p className="text-lg text-fg-secondary font-medium mb-1 line-clamp-1 truncate">
-              {current.artists || "Unknown Artist"}
-            </p>
-
-            {/* 3. Name of featured artists, producers, etc... (Placeholder) */}
-            <div className="h-5"></div>
-
-            {/* Gap spacer */}
-            <div className="flex-1 min-h-[1.5rem]" />
-
-            {/* 4. Major Genre and 5. Release year */}
-            <div className="flex flex-row items-center gap-4 mt-auto">
-              <span
-                className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider"
-                style={{ backgroundColor: `${theme.color}22`, color: theme.color, border: `1px solid ${theme.color}44` }}
-              >
-                {current.genre || "Unknown Genre"}
-              </span>
-
-              <span className="text-sm text-fg-muted font-[var(--font-family-body)]">
-                {current.release_year || "Unknown Year"}
-              </span>
+            {/* Card right: Details */}
+            <div className="flex-1 flex flex-col justify-center min-w-0 p-8 z-10">
+              <h3 className="text-3xl font-bold font-[var(--font-family-heading)] text-fg-primary mb-2 line-clamp-1 truncate" style={{ fontVariant: "small-caps" }}>
+                {current.title || "Unknown Title"}
+              </h3>
+              <p className="text-lg text-fg-secondary font-medium mb-1 line-clamp-1 truncate">
+                {current.artists || "Unknown Artist"}
+              </p>
+              <div className="h-5"></div>
+              <div className="flex-1 min-h-[1.5rem]" />
+              <div className="flex flex-row items-center gap-4 mt-auto">
+                <span
+                  className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider"
+                  style={{ backgroundColor: `${theme.color}22`, color: theme.color, border: `1px solid ${theme.color}44` }}
+                >
+                  {current.genre || "Unknown Genre"}
+                </span>
+                <span className="text-sm text-fg-muted font-[var(--font-family-body)]">
+                  {current.release_year || "Unknown Year"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -231,6 +260,8 @@ export default function Carousel() {
           />
         ))}
       </div>
+      </div>
+      )}
     </section>
   );
 }

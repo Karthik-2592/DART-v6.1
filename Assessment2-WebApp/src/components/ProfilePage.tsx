@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { gsap } from "gsap";
-import { CategoryCard, type Song } from "./Categories";
+import { CategoryCard, type Song, genres as categoriesGenres } from "./Categories";
 import { getGenreTheme } from "../utils/genreTheme";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -21,7 +21,7 @@ export default function ProfilePage() {
   const [isSelf, setIsSelf] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const genreOptions = ["Electronic", "Hip-Hop", "Lo-Fi", "Rock", "Jazz", "Cinematic", "Pop", "Acoustic", "Ambient"];
+  const genreOptions = categoriesGenres.map(g => g.name);
 
   // Form states
   const [songForm, setSongForm] = useState({

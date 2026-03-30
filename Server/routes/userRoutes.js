@@ -22,7 +22,12 @@ const storage = multer.diskStorage({
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        cb(null, 'avatar-' + uniqueSuffix + ext);
+
+        // Try to get username from body or query
+        const username = req.body.username || req.query.username || 'avatar';
+        const sanitizedName = username.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+
+        cb(null, sanitizedName + '_' + uniqueSuffix + ext);
     }
 });
 

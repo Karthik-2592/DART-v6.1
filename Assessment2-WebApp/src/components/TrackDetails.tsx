@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 
 export default function TrackDetails({ song }: { song?: Song }) {
   const [favorited, setFavorited] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+  };
 
   // Sync favorited status from backend on load
   useEffect(() => {
@@ -55,7 +62,15 @@ export default function TrackDetails({ song }: { song?: Song }) {
   };
 
   return (
-    <section className="hide-on-enter w-full mx-auto ">
+    <section className="hide-on-enter w-full mx-auto relative ">
+      {/* Toast Notification */}
+      <div
+        className={`fixed top-8 left-1/2 -translate-x-1/2 bg-gradient-to-br from-accent to-accent-light text-white font-[var(--font-family-body)] font-semibold text-[0.95rem] px-8 py-3.5 rounded-[14px] shadow-[0_8px_40px_rgba(233,30,140,0.35)] z-[9999] pointer-events-none transition-all duration-400 ${
+          showToast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-5"
+        }`}
+      >
+        ✓ Link Copied!
+      </div>
       <div className="bg-bg-card border border-border rounded-2xl p-8">
         <div className="flex items-start justify-between gap-8">
           {/* Left: Details */}
@@ -70,7 +85,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
                   {song?.artists && song?.artist_usernames 
                     ? song.artists.split(',').map((name, i, arr) => {
                         const trimmedName = name.trim();
-                        const artistUsername = song.artist_usernames.split(',')[i]?.trim();
+                        const artistUsername = song.artist_usernames?.split(',')[i]?.trim();
                         
                         if (!artistUsername) return <span key={i}>{trimmedName}{i < arr.length - 1 && <span className="text-fg-muted mr-1.5">,</span>}</span>;
 
@@ -135,6 +150,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
 
             {/* Share */}
             <button
+              onClick={handleShare}
               className="track-action-btn w-11 h-11 rounded-full bg-bg-card-hover border border-border text-fg-secondary hover:text-accent hover:border-accent/40 flex items-center justify-center cursor-pointer transition-all duration-200"
               title="Share"
             >
