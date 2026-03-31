@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { gsap } from "gsap";
 import { usePlayer } from "../context/PlayerContext";
+import { API_URL } from "../constants/api";
 
 interface PlaybackControlsProps {
   // Props removed since they are now derived from PlayerContext
@@ -80,7 +81,7 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
     
     hasIncrementedRef.current = true;
     // 1. Global play count
-    fetch(`https://web-project-iu2t.vercel.app/api/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
+    fetch(`${API_URL}/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
       .catch(err => console.error("Failed to increment global play count:", err));
 
     // 2. User-specific play count (if logged in)
@@ -89,7 +90,7 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
       try {
         const user = JSON.parse(saved);
         if (user.username) {
-          fetch(`https://web-project-iu2t.vercel.app/api/favorites/play?username=${encodeURIComponent(user.username)}&title=${encodeURIComponent(song.title)}`, { method: "POST" })
+          fetch(`${API_URL}/favorites/play?username=${encodeURIComponent(user.username)}&title=${encodeURIComponent(song.title)}`, { method: "POST" })
             .catch(err => console.error("Failed to increment user play count:", err));
         }
       } catch (e) { console.error("Error parsing user for play tracking:", e); }

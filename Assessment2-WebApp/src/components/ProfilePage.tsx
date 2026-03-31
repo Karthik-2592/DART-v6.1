@@ -6,6 +6,7 @@ import { getGenreTheme } from "../utils/genreTheme";
 import { getMediaUrl } from "../utils/mediaUtils";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { API_URL } from "../constants/api";
 
 type Tab = "profile" | "uploads" | "playlists" | "accounts";
 
@@ -154,12 +155,12 @@ export default function ProfilePage() {
     const fetchProfileData = async () => {
       try {
         const [profileRes, songsRes, uploadsRes, playlistsRes, followersRes, followingRes] = await Promise.all([
-          fetch(`https://web-project-iu2t.vercel.app/api/users?username=${targetUser.username}`).then(r => r.json()),
-          fetch("https://web-project-iu2t.vercel.app/api/songs").then(r => r.json()),
-          fetch(`https://web-project-iu2t.vercel.app/api/contributors/contributions?username=${targetUser.username}`).then(r => r.json()),
-          fetch(`https://web-project-iu2t.vercel.app/api/playlists/user/${targetUser.username}`).then(r => r.json()),
-          fetch(`https://web-project-iu2t.vercel.app/api/users/${targetUser.username}/followers`).then(r => r.json()),
-          fetch(`https://web-project-iu2t.vercel.app/api/users/${targetUser.username}/following`).then(r => r.json())
+          fetch(`${API_URL}/users?username=${targetUser.username}`).then(r => r.json()),
+          fetch(`${API_URL}/songs`).then(r => r.json()),
+          fetch(`${API_URL}/contributors/contributions?username=${targetUser.username}`).then(r => r.json()),
+          fetch(`${API_URL}/playlists/user/${targetUser.username}`).then(r => r.json()),
+          fetch(`${API_URL}/users/${targetUser.username}/followers`).then(r => r.json()),
+          fetch(`${API_URL}/users/${targetUser.username}/following`).then(r => r.json())
         ]);
 
         if (profileRes && !profileRes.error) setTargetUser(profileRes);
@@ -263,7 +264,7 @@ export default function ProfilePage() {
     if (songForm.audioFile) formData.append("audio", songForm.audioFile);
 
     try {
-      const url = isEdit ? `https://web-project-iu2t.vercel.app/api/songs?id=${songId}` : `https://web-project-iu2t.vercel.app/api/songs`;
+      const url = isEdit ? `${API_URL}/songs?id=${songId}` : `${API_URL}/songs`;
       const response = await fetch(url, {
         method: isEdit ? "PUT" : "POST",
         body: formData
@@ -277,7 +278,7 @@ export default function ProfilePage() {
 
       // Success - refresh data
       if (targetUser?.username) {
-        const updatedUploads = await fetch(`https://web-project-iu2t.vercel.app/api/contributors/contributions?username=${targetUser.username}`).then(r => r.json());
+        const updatedUploads = await fetch(`${API_URL}/contributors/contributions?username=${targetUser.username}`).then(r => r.json());
         setUploadedSongs(updatedUploads || []);
       }
       closeModal();
@@ -303,8 +304,8 @@ export default function ProfilePage() {
 
     try {
       const url = isEdit
-        ? `https://web-project-iu2t.vercel.app/api/playlists?name=${encodeURIComponent(oldName)}&creator=${user?.username}`
-        : `https://web-project-iu2t.vercel.app/api/playlists?creator=${user?.username}`;
+        ? `${API_URL}/playlists?name=${encodeURIComponent(oldName)}&creator=${user?.username}`
+        : `${API_URL}/playlists?creator=${user?.username}`;
 
       const payload = {
         name: playlistForm.name,
@@ -326,7 +327,7 @@ export default function ProfilePage() {
 
       // Success - refresh data
       if (user?.username) {
-        const updatedPlaylists = await fetch(`https://web-project-iu2t.vercel.app/api/playlists/user/${user.username}`).then(r => r.json());
+        const updatedPlaylists = await fetch(`${API_URL}/playlists/user/${user.username}`).then(r => r.json());
         setPlaylists(updatedPlaylists || []);
       }
       closeModal();
@@ -344,7 +345,7 @@ export default function ProfilePage() {
       type: "danger",
       onConfirm: async () => {
         try {
-          const res = await fetch(`https://web-project-iu2t.vercel.app/api/songs?id=${songId}`, { method: "DELETE" });
+          const res = await fetch(`${API_URL}/songs?id=${songId}`, { method: "DELETE" });
           if (res.ok) {
             setUploadedSongs(prev => prev.filter(s => s.id !== songId));
             setConfirmDialog(p => ({ ...p, isOpen: false }));
@@ -371,7 +372,7 @@ export default function ProfilePage() {
       type: "danger",
       onConfirm: async () => {
         try {
-          const res = await fetch(`https://web-project-iu2t.vercel.app/api/playlists?name=${encodeURIComponent(plName)}&creator=${user?.username}`, { method: "DELETE" });
+          const res = await fetch(`${API_URL}/playlists?name=${encodeURIComponent(plName)}&creator=${user?.username}`, { method: "DELETE" });
           if (res.ok) {
             setPlaylists(prev => prev.filter(p => p.name !== plName));
             setConfirmDialog(p => ({ ...p, isOpen: false }));
@@ -816,7 +817,7 @@ export default function ProfilePage() {
                         formData.append("profile_picture", profileFileRef.current.files[0]);
                       }
 
-                      const res = await fetch(`https://web-project-iu2t.vercel.app/api/users?username=${user.username}`, {
+                      const res = await fetch(`${API_URL}/users?username=${user.username}`, {
                         method: "PUT",
                         body: formData
                       });
@@ -856,7 +857,7 @@ export default function ProfilePage() {
                 onClick={async () => {
                   if (user?.username) {
                     try {
-                      const res = await fetch(`https://web-project-iu2t.vercel.app/api/users?username=${user.username}`, { 
+                      const res = await fetch(`${API_URL}/users?username=${user.username}`, { 
                         method: "DELETE",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ password: deletePass })
@@ -960,11 +961,11 @@ export default function ProfilePage() {
                     if (!user) return navigate("/login");
                     try {
                       const method = isFollowing ? "DELETE" : "POST";
-                      const res = await fetch(`https://web-project-iu2t.vercel.app/api/users/${user.username}/follow/${targetUser?.username}`, { method });
+                      const res = await fetch(`${API_URL}/users/${user.username}/follow/${targetUser?.username}`, { method });
                       if (res.ok) {
                         setIsFollowing(!isFollowing);
                         // Refresh followers list
-                        const updateRes = await fetch(`https://web-project-iu2t.vercel.app/api/users/${targetUser?.username}/followers`).then(r => r.json());
+                        const updateRes = await fetch(`${API_URL}/users/${targetUser?.username}/followers`).then(r => r.json());
                         setAllFollowers(updateRes || []);
                       }
                     } catch (err) { console.error(err); }

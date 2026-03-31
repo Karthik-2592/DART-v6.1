@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { CategoryCard, type Song } from "./Categories";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { API_URL } from "../constants/api";
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
@@ -53,7 +54,7 @@ export default function SearchBar() {
       setIsLoading(true);
       setHasSearched(false); // Hide previous results while loading
 
-      fetch(`https://web-project-iu2t.vercel.app/api/songs/search?q=${encodeURIComponent(currentQuery)}`)
+      fetch(`${API_URL}/songs/search?q=${encodeURIComponent(currentQuery)}`)
         .then(res => res.json())
         .then(data => {
             setResults(data);

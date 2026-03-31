@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGenreTheme } from "../utils/genreTheme";
 import { type Song } from "./Categories";
 import { getMediaUrl } from "../utils/mediaUtils";
+import { API_URL } from "../constants/api";
 
 export default function PlaylistQueue({ contextSongs: contextSongsProp }: { contextSongs?: Song[] }) {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -17,7 +18,7 @@ export default function PlaylistQueue({ contextSongs: contextSongsProp }: { cont
   const activeId = songId ? parseInt(songId) : currentSong?.id;
 
   useEffect(() => {
-    fetch("https://web-project-iu2t.vercel.app/api/songs")
+    fetch(`${API_URL}/songs`)
       .then(res => res.json())
       .then(data => setSongs(data))
       .catch(err => console.error("Failed to fetch songs:", err));

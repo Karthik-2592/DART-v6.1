@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type FormEvent, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
+import { API_URL } from "../constants/api";
 
 /* ── Validators ── */
 function validateUsername(v: string): string | null {
@@ -192,7 +193,7 @@ export default function RegisterPage() {
       if (description) formData.append("description", description);
       if (avatarFile) formData.append("profile_picture", avatarFile);
 
-      const response = await fetch("https://web-project-iu2t.vercel.app/api/users/register", {
+      const response = await fetch(`${API_URL}/users/register`, {
         method: "POST",
         body: formData,
       });

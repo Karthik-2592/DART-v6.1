@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getGenreTheme } from "../utils/genreTheme";
 import { getMediaUrl } from "../utils/mediaUtils";
+import { API_URL } from "../constants/api";
 
 export interface Song {
   id: number;
@@ -154,12 +155,12 @@ export default function Categories({ songs }: { songs: Song[] }) {
         const u = JSON.parse(sessionUserStr);
         setUser(u);
 
-        fetch(`https://web-project-iu2t.vercel.app/api/favorites/user/${u.username}`)
+        fetch(`${API_URL}/favorites/user/${u.username}`)
           .then(res => res.json())
           .then(data => setFavorites(data))
           .catch(err => console.error(err));
 
-        fetch(`https://web-project-iu2t.vercel.app/api/playlists/user/${u.username}`)
+        fetch(`${API_URL}/playlists/user/${u.username}`)
           .then(res => res.json())
           .then(data => setPlaylists(data))
           .catch(err => console.error(err));

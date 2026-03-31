@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getMediaUrl } from '../utils/mediaUtils';
+import { API_URL } from '../constants/api';
 
 export interface CommentType {
   id: number;
@@ -36,7 +37,7 @@ export default function Comments({ songId }: CommentsProps) {
 
   const fetchComments = useCallback(async () => {
     try {
-      const response = await fetch(`https://web-project-iu2t.vercel.app/api/comments/song/${songId}`);
+      const response = await fetch(`${API_URL}/comments/song/${songId}`);
       if (response.ok) {
         const data = await response.json();
         setComments(data);
@@ -59,7 +60,7 @@ export default function Comments({ songId }: CommentsProps) {
     
     setIsSubmitting(true);
     try {
-      const response = await fetch("https://web-project-iu2t.vercel.app/api/comments", {
+      const response = await fetch(`${API_URL}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -88,7 +89,7 @@ export default function Comments({ songId }: CommentsProps) {
 
   const handleLike = async (commentId: number) => {
     try {
-      const response = await fetch(`https://web-project-iu2t.vercel.app/api/comments/${commentId}/like`, {
+      const response = await fetch(`${API_URL}/comments/${commentId}/like`, {
         method: "POST"
       });
       if (response.ok) {

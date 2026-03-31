@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { type Song } from "./Categories";
-import { useState, useEffect } from "react";
+import { API_URL } from "../constants/api";
 
 export default function TrackDetails({ song }: { song?: Song }) {
   const [favorited, setFavorited] = useState(false);
@@ -17,7 +18,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
     const userData = sessionStorage.getItem("dart_v6_1_user");
     if (userData && song) {
       const user = JSON.parse(userData);
-      fetch(`https://web-project-iu2t.vercel.app/api/favorites/user/${user.username}`)
+      fetch(`${API_URL}/favorites/user/${user.username}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -46,7 +47,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
 
     const user = JSON.parse(userData);
     const method = nextState ? "POST" : "DELETE";
-    const url = `https://web-project-iu2t.vercel.app/api/favorites?username=${user.username}&title=${encodeURIComponent(song.title)}`;
+    const url = `${API_URL}/favorites?username=${user.username}&title=${encodeURIComponent(song.title)}`;
 
     try {
       const res = await fetch(url, { method });

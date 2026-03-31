@@ -1,16 +1,12 @@
-/**
- * Centralized utility to handle media URLs.
- * It intelligently handles both full URLs (Supabase Signed URLs) 
- * and legacy relative paths from the local server.
- */
-
+import { API_BASE_URL } from "../constants/api";
+ 
 export const getMediaUrl = (path: string | null | undefined, type?: 'audio' | 'cover' | 'profilePic'): string => {
   if (!path) return '';
   
   // If it's already a full URL (Supabase Signed URL or external), return it as-is
   if (path.startsWith('http')) return path;
   
-  const baseUrl = 'https://web-project-iu2t.vercel.app';
+  const baseUrl = API_BASE_URL;
   
   // Remove redundant 'Storage/' or 'storage/' prefix if present in the legacy path string
   // This helps when the frontend hasn't been updated to match the new DB record format yet.

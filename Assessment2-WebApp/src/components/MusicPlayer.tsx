@@ -4,6 +4,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { type Song } from "./Categories";
 import { usePlayer } from "../context/PlayerContext";
+import { API_URL } from "../constants/api";
 
 import Navbar from "./Navbar";
 import Visualizer from "./Visualizer";
@@ -39,7 +40,7 @@ export default function MusicPlayer() {
 
     // Otherwise, if we have an ID in the URL and it doesn't match current, fetch it
     if (songId && String(currentSong?.id) !== songId) {
-      fetch(`https://web-project-iu2t.vercel.app/api/songs/${songId}`)
+      fetch(`${API_URL}/songs/${songId}`)
         .then(res => res.json())
         .then(data => {
           if (data && !data.error) {

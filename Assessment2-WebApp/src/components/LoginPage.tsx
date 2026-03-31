@@ -1,6 +1,7 @@
 import { useState, type FormEvent, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
+import { API_URL } from "../constants/api";
 
 /* ── Validation helpers ── */
 function validateUsername(v: string): string | null {
@@ -49,7 +50,7 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("https://web-project-iu2t.vercel.app/api/users/login", {
+      const response = await fetch(`${API_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

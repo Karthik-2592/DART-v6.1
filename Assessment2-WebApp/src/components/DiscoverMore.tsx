@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { type Song, CategoryCard } from "./Categories";
+import { API_URL } from "../constants/api";
 
 interface Genre {
   name: string;
@@ -47,7 +48,7 @@ export default function DiscoverMore() {
   const [songs, setSongs] = useState<Song[]>([]);
   
   useEffect(() => {
-    fetch("https://web-project-iu2t.vercel.app/api/songs")
+    fetch(`${API_URL}/songs`)
       .then(res => res.json())
       .then(data => setSongs(data))
       .catch(err => console.error("Failed to fetch songs:", err));

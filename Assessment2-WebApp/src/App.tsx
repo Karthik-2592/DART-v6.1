@@ -4,6 +4,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./App.css";
 
+import { API_URL } from "./constants/api";
 import Navbar from "./components/Navbar";
 import Carousel from "./components/Carousel";
 import SearchBar from "./components/SearchBar";
@@ -24,7 +25,7 @@ function LandingPage() {
   const [songs, setSongs] = useState<Song[]>([]);
 
   useEffect(() => {
-    fetch("https://web-project-iu2t.vercel.app/api/songs")
+    fetch(`${API_URL}/songs`)
       .then(res => res.json())
       .then(data => setSongs(data || []))
       .catch(err => console.error("LandingPage fetch error:", err));
