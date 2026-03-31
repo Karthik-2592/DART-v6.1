@@ -1,38 +1,36 @@
-import db from './db.js';
+import supabase from './supabaseClient.js';
 
-export const resolveUser = (identifier, type = 'username') => {
-    return new Promise((resolve, reject) => {
-        const query = type === 'email' ? 
-            `SELECT id FROM users WHERE email = ?` : 
-            `SELECT id FROM users WHERE username = ?`;
-        db.get(query, [identifier], (err, row) => {
-            if (err) reject(err);
-            resolve(row ? row.id : null);
-        });
-    });
+export const resolveUser = async (identifier, type = 'username') => {
+    const column = type === 'email' ? 'email' : 'username';
+    const { data: row, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq(column, identifier)
+        .maybeSingle();
+
+    if (error) throw error;
+    return row ? row.id : null;
 };
 
-export const resolveSong = (title) => {
-    return new Promise((resolve, reject) => {
-        const query = `SELECT id FROM songs WHERE title = ?`;
-        db.get(query, [title], (err, row) => {
-            if (err) reject(err);
-            resolve(row ? row.id : null);
-        });
-    });
+export const resolveSong = async (title) => {
+    const { data: row, error } = await supabase
+        .from('songs')
+        .select('id')
+        .eq('title', title)
+        .maybeSingle();
+
+    if (error) throw error;
+    return row ? row.id : null;
 };
 
-export const resolvePlaylist = (name, creatorUsername) => {
-    return new Promise((resolve, reject) => {
-        const query = `
-            SELECT p.id 
-            FROM playlists p
-            JOIN users u ON p.user_id = u.id
-            WHERE p.name = ? AND u.username = ?
-        `;
-        db.get(query, [name, creatorUsername], (err, row) => {
-            if (err) reject(err);
-            resolve(row ? row.id : null);
-        });
-    });
+export const resolvePlaylist = async (name, creatorUsername) => {
+    const { data: row, error } = await supabase
+        .from('playlists')
+        .select('id, users!inner(username)')
+        .eq('name', name)
+        .eq('users.username', creatorUsername)
+        .maybeSingle();
+
+    if (error) throw error;
+    return row ? row.id : null;
 };

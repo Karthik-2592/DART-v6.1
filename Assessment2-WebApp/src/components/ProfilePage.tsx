@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { CategoryCard, type Song, genres as categoriesGenres } from "./Categories";
 import { getGenreTheme } from "../utils/genreTheme";
+import { getMediaUrl } from "../utils/mediaUtils";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 
@@ -413,7 +414,7 @@ export default function ProfilePage() {
               <Link key={u.username} to={`/profile/${u.username}`} className="flex flex-col items-center gap-3 group no-underline">
                 <div className="w-20 h-20 rounded-full border-2 border-white/5 group-hover:border-accent group-hover:scale-110 transition-all duration-300 p-0.5 overflow-hidden">
                   <img
-                    src={u.profile_picture ? `http://localhost:5000/profilePic/${u.profile_picture}` : `https://ui-avatars.com/api/?name=${u.username}&background=242435&color=fff&size=128`}
+                    src={getMediaUrl(u.profile_picture, 'profilePic') || `https://ui-avatars.com/api/?name=${u.username}&background=242435&color=fff&size=128`}
                     className="w-full h-full rounded-full object-cover"
                     alt=""
                   />
@@ -590,7 +591,7 @@ export default function ProfilePage() {
             <div className="shrink-0 h-full aspect-square bg-[#242435] border-r border-white/10 relative overflow-hidden flex flex-col items-center justify-center p-8 group">
               {(songForm.coverFile || (isEdit && song?.cover_path)) ? (
                 <img
-                  src={songForm.coverFile ? URL.createObjectURL(songForm.coverFile) : (song.cover_path && !song.cover_path.includes('/') ? `http://localhost:5000/cover/${song.cover_path}` : `http://localhost:5000/${song.cover_path}`)}
+                  src={songForm.coverFile ? URL.createObjectURL(songForm.coverFile) : getMediaUrl(song.cover_path, 'cover')}
                   className="w-full h-full object-cover absolute inset-0 group-hover:scale-110 transition-transform duration-700"
                   alt=""
                 />
@@ -781,7 +782,7 @@ export default function ProfilePage() {
             <div className="shrink-0 h-full aspect-square bg-[#242435] border-r border-white/10 flex flex-col items-center justify-center p-12">
               <div className="w-48 h-48 rounded-full border-4 border-accent p-1 overflow-hidden group">
                 <img
-                  src={user?.profile_picture ? `http://localhost:5000/userData/${user.profile_picture}` : `https://ui-avatars.com/api/?name=${user?.username}&background=E91E8C&color=fff&size=256`}
+                  src={getMediaUrl(user?.profile_picture, 'profilePic') || `https://ui-avatars.com/api/?name=${user?.username}&background=E91E8C&color=fff&size=256`}
                   className="w-full h-full rounded-full object-cover"
                   alt=""
                 />
@@ -933,7 +934,7 @@ export default function ProfilePage() {
               <div className="absolute inset-0 bg-accent blur-[40px] opacity-20 group-hover:opacity-40 transition-opacity" />
               <div className="w-32 h-32 md:w-36 md:h-36 rounded-full bg-gradient-to-tr from-accent to-accent-light p-1 shadow-2xl overflow-hidden relative z-10">
                 <img
-                  src={targetUser?.profile_picture ? `http://localhost:5000/userData/${targetUser.profile_picture}` : `https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=E91E8C&color=fff&size=256`}
+                  src={getMediaUrl(targetUser?.profile_picture, 'profilePic') || `https://ui-avatars.com/api/?name=${targetUser?.username || 'User'}&background=E91E8C&color=fff&size=256`}
                   className="w-full h-full rounded-full object-cover"
                   alt=""
                 />

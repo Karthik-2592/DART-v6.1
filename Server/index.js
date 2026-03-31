@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import db from "./db.js";
 
 // Import modular routes
 import userRoutes from "./routes/userRoutes.js";
@@ -22,16 +21,6 @@ const PORT = 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Serve static files from storage directory
-app.use("/Storage", express.static(path.join(__dirname, "Storage"), {
-    setHeaders: (res) => {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-    }
-}));
-app.use('/audio', express.static(path.join(__dirname, 'Storage/audio')));
-app.use('/cover', express.static(path.join(__dirname, 'Storage/cover')));
-app.use('/profilePic', express.static(path.join(__dirname, 'Storage/profilePic')));
 
 // Register modular routes
 app.use("/users", userRoutes);

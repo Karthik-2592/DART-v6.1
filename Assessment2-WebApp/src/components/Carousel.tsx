@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import { getGenreTheme } from "../utils/genreTheme";
 import { type Song } from "./Categories";
+import { getMediaUrl } from "../utils/mediaUtils";
 
 export default function Carousel() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -164,7 +165,7 @@ export default function Carousel() {
             >
               {current.cover_path && (
                 <img
-                  src={current.cover_path && !current.cover_path.includes('/') ? `http://localhost:5000/cover/${current.cover_path}` : `http://localhost:5000/${current.cover_path}`}
+                  src={getMediaUrl(current.cover_path, 'cover')}
                   alt=""
                   className="w-full h-full object-cover"
                 />
@@ -186,7 +187,7 @@ export default function Carousel() {
             <div className="shrink-0 h-full aspect-square bg-[#242435] rounded-l-[4px] border-r border-border flex flex-col items-center justify-center overflow-hidden">
               {current.cover_path ? (
                 <img
-                  src={current.cover_path && !current.cover_path.includes('/') ? `http://localhost:5000/cover/${current.cover_path}` : `http://localhost:5000/${current.cover_path}`}
+                  src={getMediaUrl(current.cover_path, 'cover')}
                   alt={current.title}
                   className="w-full h-full object-cover pointer-events-none"
                 />

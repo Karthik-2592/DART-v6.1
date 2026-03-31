@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from "react";
 import { type Song } from "../components/Categories";
+import { getMediaUrl } from "../utils/mediaUtils";
 
 const FFT_SIZE = 16384;
 
@@ -83,11 +84,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     return () => audio.removeEventListener("play", handlePlay);
   }, [ensureAudioContext]);
 
-  const audioSrc = currentSong 
-    ? (currentSong.audio_path && !currentSong.audio_path.includes('/') 
-        ? `http://localhost:5000/audio/${encodeURIComponent(currentSong.audio_path)}` 
-        : `http://localhost:5000/${currentSong.audio_path?.split('/').map(encodeURIComponent).join('/')}`)
-    : "";
+  const audioSrc = currentSong ? getMediaUrl(currentSong.audio_path, 'audio') : "";
 
   return (
     <PlayerContext.Provider value={{

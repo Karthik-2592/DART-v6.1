@@ -1,6 +1,7 @@
 import express from 'express';
-import db from '../db.js';
+import supabase from '../supabaseClient.js';
 import { resolveUser, resolveSong } from '../resolvers.js';
+import { formatSongRows } from '../utils/formatters.js';
 
 const router = express.Router();
 
@@ -14,23 +15,34 @@ router.post('/', async (req, res) => {
     if (!songId) return res.status(404).json({ error: "Song not found" });
 
     console.log(`[FAVORITE] User "${username}" (ID: ${userId}) favoriting song: "${title}" (ID: ${songId})`);
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-        db.run(`INSERT OR IGNORE INTO favorites (user_id, song_id) VALUES (?, ?)`, [userId, songId], function (err) {
-            if (err) {
-                console.error(`[FAVORITE] DB Error favoriting song: ${err.message}`);
-                db.run("ROLLBACK");
-                return res.status(500).json({ error: err.message });
-            }
-            if (this.changes > 0) {
-                console.log(`[FAVORITE] New relationship created. Incrementing global favorite_count for song ID: ${songId}...`);
-                db.run(`UPDATE songs SET favorite_count = favorite_count + 1 WHERE id = ?`, [songId]);
-            }
-            db.run("COMMIT");
-            console.log(`[FAVORITE] Transaction complete. Song "${title}" favorited.`);
-            res.status(201).json({ message: "Song favorited" });
-        });
-    });
+    
+    // Check if already exists
+    const { data: existing } = await supabase
+        .from('favorites')
+        .select('song_id')
+        .eq('user_id', userId)
+        .eq('song_id', songId)
+        .maybeSingle();
+
+    if (!existing) {
+        const { error: insError } = await supabase
+            .from('favorites')
+            .insert([{ user_id: userId, song_id: songId }]);
+
+        if (insError) {
+            console.error(`[FAVORITE] Supabase Error favoriting song: ${insError.message}`);
+            return res.status(500).json({ error: insError.message });
+        }
+
+        console.log(`[FAVORITE] New relationship created. Incrementing global favorite_count for song ID: ${songId}...`);
+        
+        // Increment global favorite_count
+        const { data: song } = await supabase.from('songs').select('favorite_count').eq('id', songId).single();
+        await supabase.from('songs').update({ favorite_count: (song.favorite_count || 0) + 1 }).eq('id', songId);
+    }
+    
+    console.log(`[FAVORITE] Transaction complete. Song "${title}" favorited.`);
+    res.status(201).json({ message: "Song favorited" });
 });
 
 // DELETE /favorites?username=:username&title=:title - Unfavorite a song
@@ -43,23 +55,33 @@ router.delete('/', async (req, res) => {
     if (!songId) return res.status(404).json({ error: "Song not found" });
 
     console.log(`[FAVORITE] User "${username}" (ID: ${userId}) unfavoriting song: "${title}" (ID: ${songId})`);
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-        db.run(`DELETE FROM favorites WHERE user_id = ? AND song_id = ?`, [userId, songId], function (err) {
-            if (err) {
-                console.error(`[FAVORITE] DB Error removing favorite: ${err.message}`);
-                db.run("ROLLBACK");
-                return res.status(500).json({ error: err.message });
-            }
-            if (this.changes > 0) {
-                console.log(`[FAVORITE] Relationship removed. Decrementing global favorite_count for song ID: ${songId}...`);
-                db.run(`UPDATE songs SET favorite_count = MAX(0, favorite_count - 1) WHERE id = ?`, [songId]);
-            }
-            db.run("COMMIT");
-            console.log(`[FAVORITE] Transaction complete. Song "${title}" unfavorited.`);
-            res.json({ message: "Favorite removed" });
-        });
-    });
+    
+    const { data: existing } = await supabase
+        .from('favorites')
+        .select('song_id')
+        .eq('user_id', userId)
+        .eq('song_id', songId)
+        .maybeSingle();
+
+    if (existing) {
+        const { error: delError } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('user_id', userId)
+            .eq('song_id', songId);
+
+        if (delError) {
+            console.error(`[FAVORITE] Supabase Error removing favorite: ${delError.message}`);
+            return res.status(500).json({ error: delError.message });
+        }
+
+        console.log(`[FAVORITE] Relationship removed. Decrementing global favorite_count for song ID: ${songId}...`);
+        const { data: song } = await supabase.from('songs').select('favorite_count').eq('id', songId).single();
+        await supabase.from('songs').update({ favorite_count: Math.max(0, (song.favorite_count || 0) - 1) }).eq('id', songId);
+    }
+
+    console.log(`[FAVORITE] Transaction complete. Song "${title}" unfavorited.`);
+    res.json({ message: "Favorite removed" });
 });
 
 // GET /favorites?username=:username&title=:title/playcount - User's play count for a song
@@ -70,11 +92,15 @@ router.get('/playcount', async (req, res) => {
     const [userId, songId] = await Promise.all([resolveUser(username), resolveSong(title)]);
     if (!userId || !songId) return res.status(404).json({ error: "User or song not found" });
 
-    const query = `SELECT user_play_count FROM favorites WHERE user_id = ? AND song_id = ?`;
-    db.get(query, [userId, songId], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ play_count: row ? row.user_play_count : 0 });
-    });
+    const { data: row, error } = await supabase
+        .from('favorites')
+        .select('user_play_count')
+        .eq('user_id', userId)
+        .eq('song_id', songId)
+        .maybeSingle();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ play_count: row ? row.user_play_count : 0 });
 });
 
 // POST /favorites?username=:username&title=:title/play - Increment user's play count
@@ -85,22 +111,32 @@ router.post('/play', async (req, res) => {
     const [userId, songId] = await Promise.all([resolveUser(username), resolveSong(title)]);
     if (!userId || !songId) return res.status(404).json({ error: "User or song not found" });
 
-    const query = `UPDATE favorites SET user_play_count = user_play_count + 1 WHERE user_id = ? AND song_id = ?`;
-    db.run(query, [userId, songId], function (err) {
-        if (err) {
-            console.error(`[FAVORITE] DB Error incrementing user play count: ${err.message}`);
-            return res.status(500).json({ error: err.message });
+    const { data: row, error: fetchError } = await supabase
+        .from('favorites')
+        .select('user_play_count')
+        .eq('user_id', userId)
+        .eq('song_id', songId)
+        .maybeSingle();
+
+    if (fetchError) return res.status(500).json({ error: fetchError.message });
+
+    if (row) {
+        const new_count = (row.user_play_count || 0) + 1;
+        const { error: updateError } = await supabase
+            .from('favorites')
+            .update({ user_play_count: new_count })
+            .eq('user_id', userId)
+            .eq('song_id', songId);
+
+        if (updateError) {
+            console.error(`[FAVORITE] Supabase Error incrementing user play count: ${updateError.message}`);
+            return res.status(500).json({ error: updateError.message });
         }
-        if (this.changes > 0) {
-            db.get(`SELECT user_play_count FROM favorites WHERE user_id = ? AND song_id = ?`, [userId, songId], (err, row) => {
-                if (!err && row) console.log(`[FAVORITE] User-specific play count incremented for: ${username} on track: ${title}. Current: ${row.user_play_count}`);
-                res.json({ message: "User play count incremented", user_play_count: row ? row.user_play_count : undefined });
-            });
-        } else {
-            // Track not in favorites - skip logging and return no-op message
-            res.json({ message: "Track not in favorites, user-specific stats ignored." });
-        }
-    });
+        console.log(`[FAVORITE] User-specific play count incremented for: ${username} on track: ${title}. Current: ${new_count}`);
+        res.json({ message: "User play count incremented", user_play_count: new_count });
+    } else {
+        res.json({ message: "Track not in favorites, user-specific stats ignored." });
+    }
 });
 
 // GET /users/:username/favorites - Retrieve all songs favorited by a user by username
@@ -109,24 +145,41 @@ router.get('/user/:username', async (req, res) => {
     const userId = await resolveUser(username);
     if (!userId) return res.status(404).json({ error: "User not found" });
 
-    const query = `
-        SELECT s.*, GROUP_CONCAT(u.display_name, ', ') AS artists, f.user_play_count
-        FROM songs s
-        JOIN favorites f ON s.id = f.song_id
-        LEFT JOIN song_contributors sc ON s.id = sc.song_id
-        LEFT JOIN users u ON sc.user_id = u.id
-        WHERE f.user_id = ?
-        GROUP BY s.id
-    `;
     console.log(`[FAVORITE] Fetching all favorites for user: ${username} (ID: ${userId})`);
-    db.all(query, [userId], (err, rows) => {
-        if (err) {
-            console.error(`[FAVORITE] DB Error fetching favorites for ${username}: ${err.message}`);
-            return res.status(500).json({ error: err.message });
-        }
-        console.log(`[FAVORITE] User "${username}" has ${rows.length} favorite songs.`);
-        res.json(rows);
+    
+    const { data: rows, error } = await supabase
+        .from('favorites')
+        .select(`
+            user_play_count,
+            songs (
+                *,
+                song_contributors (
+                    users (
+                        display_name,
+                        username
+                    )
+                )
+            )
+        `)
+        .eq('user_id', userId);
+
+    if (error) {
+        console.error(`[FAVORITE] Supabase Error fetching favorites for ${username}: ${error.message}`);
+        return res.status(500).json({ error: error.message });
+    }
+    
+    const songs = rows.map(r => r.songs).filter(Boolean);
+    const formattedSongs = await formatSongRows(songs);
+    
+    const formatted = rows.map((r, i) => {
+        return {
+            ...formattedSongs[i],
+            user_play_count: r.user_play_count
+        };
     });
+
+    console.log(`[FAVORITE] User "${username}" has ${formatted.length} favorite songs.`);
+    res.json(formatted);
 });
 
 export default router;

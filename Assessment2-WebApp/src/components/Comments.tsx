@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { getMediaUrl } from '../utils/mediaUtils';
 
 export interface CommentType {
   id: number;
@@ -127,7 +128,7 @@ export default function Comments({ songId }: CommentsProps) {
           <div className="w-10 h-10 shrink-0 rounded-full bg-bg-card-hover overflow-hidden mt-1 border border-border">
             {currentUser.profile_picture ? (
               <img
-                src={`http://localhost:5000/profilePic/${currentUser.profile_picture}`}
+                src={getMediaUrl(currentUser.profile_picture, 'profilePic')}
                 alt={currentUser.display_name}
                 className="w-full h-full object-cover"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -181,7 +182,7 @@ export default function Comments({ songId }: CommentsProps) {
                     <div className="w-10 h-10 shrink-0 rounded-full bg-bg-card overflow-hidden border border-border">
                         {comment.profile_picture ? (
                             <img
-                            src={`http://localhost:5000/profilePic/${comment.profile_picture}`}
+                            src={getMediaUrl(comment.profile_picture, 'profilePic')}
                             alt={comment.display_name}
                             className="w-full h-full object-cover"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}

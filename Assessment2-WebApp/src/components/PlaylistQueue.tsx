@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGenreTheme } from "../utils/genreTheme";
 import { type Song } from "./Categories";
+import { getMediaUrl } from "../utils/mediaUtils";
 
 export default function PlaylistQueue({ contextSongs: contextSongsProp }: { contextSongs?: Song[] }) {
   const [songs, setSongs] = useState<Song[]>([]);
@@ -122,7 +123,7 @@ export default function PlaylistQueue({ contextSongs: contextSongsProp }: { cont
                     <div className="shrink-0 h-full aspect-square bg-[#242435] rounded-l-[4px] border-r border-border flex flex-col items-center justify-center overflow-hidden">
                       {card.cover_path ? (
                         <img 
-                          src={card.cover_path && !card.cover_path.includes('/') ? `http://localhost:5000/cover/${card.cover_path}` : `http://localhost:5000/${card.cover_path}`} 
+                          src={getMediaUrl(card.cover_path, 'cover')} 
                           alt={card.title} 
                           className="w-full h-full object-cover pointer-events-none" 
                         />

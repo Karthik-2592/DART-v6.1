@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getGenreTheme } from "../utils/genreTheme";
+import { getMediaUrl } from "../utils/mediaUtils";
 
 export interface Song {
   id: number;
@@ -78,7 +79,7 @@ export function CategoryCard({ index, song, genreName, contextSongs }: { index: 
         <div className="shrink-0 w-full aspect-square bg-[#242435] border-b border-border flex items-center justify-center overflow-hidden">
           {song && song.cover_path ? (
             <img
-              src={song.cover_path && !song.cover_path.includes('/') ? `http://localhost:5000/cover/${song.cover_path}` : `http://localhost:5000/${song.cover_path}`}
+              src={getMediaUrl(song.cover_path, 'cover')}
               alt={song.title}
               className="w-full h-full object-cover pointer-events-none"
             />

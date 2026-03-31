@@ -1,11 +1,11 @@
 import express from 'express';
-import db from '../db.js';
+import supabase from '../supabaseClient.js';
 
 const router = express.Router();
 
 // POST /comments
 // Creates a new comment for a song
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { song_id, user_id, text } = req.body;
 
     if (!song_id || !user_id || !text) {
@@ -16,111 +16,136 @@ router.post('/', (req, res) => {
         return res.status(400).json({ error: "Comment text cannot exceed 400 characters" });
     }
 
-    const query = `
-        INSERT INTO comments (song_id, user_id, text)
-        VALUES (?, ?, ?)
-    `;
+    console.log(`[COMMENT] creating comment for song ID: ${song_id} by user ID: ${user_id}`);
+    
+    const { data, error } = await supabase
+        .from('comments')
+        .insert([{ song_id, user_id, text }])
+        .select('id')
+        .single();
 
-    db.run(query, [song_id, user_id, text], function (err) {
-        if (err) {
-            console.error("[COMMENT] Error creating comment:", err.message);
-            return res.status(500).json({ error: err.message });
-        }
-        res.status(201).json({ message: "Comment created successfully", id: this.lastID });
-    });
+    if (error) {
+        console.error("[COMMENT] Supabase Error creating comment:", error.message);
+        return res.status(500).json({ error: error.message });
+    }
+    
+    res.status(201).json({ message: "Comment created successfully", id: data.id });
 });
 
 // GET /comments/song/:songId
 // Fetches all comments for a given song
-router.get('/song/:songId', (req, res) => {
+router.get('/song/:songId', async (req, res) => {
     const { songId } = req.params;
 
-    const query = `
-        SELECT c.id, c.text, c.like_count, c.created_at, u.username, u.display_name, u.profile_picture
-        FROM comments c
-        JOIN users u ON c.user_id = u.id
-        WHERE c.song_id = ?
-        ORDER BY c.created_at DESC
-    `;
+    const { data: rows, error } = await supabase
+        .from('comments')
+        .select(`
+            id, text, like_count, created_at,
+            users (
+                username,
+                display_name,
+                profile_picture
+            )
+        `)
+        .eq('song_id', songId)
+        .order('created_at', { ascending: false });
 
-    db.all(query, [songId], (err, rows) => {
-        if (err) {
-            console.error(`[COMMENT] Error fetching comments for song ${songId}:`, err.message);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows);
+    if (error) {
+        console.error(`[COMMENT] Supabase Error fetching comments for song ${songId}:`, error.message);
+        return res.status(500).json({ error: error.message });
+    }
+    
+    const formatted = rows.map(r => {
+        const { users, ...commentData } = r;
+        return {
+            ...commentData,
+            username: users?.username,
+            display_name: users?.display_name,
+            profile_picture: users?.profile_picture
+        };
     });
+    
+    res.json(formatted);
 });
 
 // GET /comments/user/:userId
 // Fetches all comments authored by a given user
-router.get('/user/:userId', (req, res) => {
+router.get('/user/:userId', async (req, res) => {
     const { userId } = req.params;
 
-    const query = `
-        SELECT c.id, c.text, c.like_count, c.created_at, s.title as song_title, s.cover_path
-        FROM comments c
-        JOIN songs s ON c.song_id = s.id
-        WHERE c.user_id = ?
-        ORDER BY c.created_at DESC
-    `;
+    const { data: rows, error } = await supabase
+        .from('comments')
+        .select(`
+            id, text, like_count, created_at,
+            songs (
+                title,
+                cover_path
+            )
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-    db.all(query, [userId], (err, rows) => {
-        if (err) {
-            console.error(`[COMMENT] Error fetching comments for user ${userId}:`, err.message);
-            return res.status(500).json({ error: err.message });
-        }
-        res.json(rows);
+    if (error) {
+        console.error(`[COMMENT] Supabase Error fetching comments for user ${userId}:`, error.message);
+        return res.status(500).json({ error: error.message });
+    }
+    
+    const formatted = rows.map(r => {
+        const { songs, ...commentData } = r;
+        return {
+            ...commentData,
+            song_title: songs?.title,
+            cover_path: songs?.cover_path
+        };
     });
+    
+    res.json(formatted);
 });
 
 // POST /comments/:id/like
 // Increments the like_count for a comment
-router.post('/:id/like', (req, res) => {
+router.post('/:id/like', async (req, res) => {
     const { id } = req.params;
 
-    const query = `
-        UPDATE comments
-        SET like_count = like_count + 1
-        WHERE id = ?
-    `;
+    const { data: current, error: fetchError } = await supabase
+        .from('comments')
+        .select('like_count')
+        .eq('id', id)
+        .maybeSingle();
+    
+    if (fetchError) return res.status(500).json({ error: fetchError.message });
+    if (!current) return res.status(404).json({ error: "Comment not found" });
 
-    db.run(query, [id], function (err) {
-        if (err) {
-            console.error(`[COMMENT] Error liking comment ${id}:`, err.message);
-            return res.status(500).json({ error: err.message });
-        }
+    const new_count = (current.like_count || 0) + 1;
+    const { error: updateError } = await supabase
+        .from('comments')
+        .update({ like_count: new_count })
+        .eq('id', id);
+
+    if (updateError) {
+        console.error(`[COMMENT] Supabase Error liking comment ${id}:`, updateError.message);
+        return res.status(500).json({ error: updateError.message });
+    }
         
-        if (this.changes === 0) {
-            return res.status(404).json({ error: "Comment not found" });
-        }
-
-        res.json({ message: "Comment liked successfully" });
-    });
+    res.json({ message: "Comment liked successfully" });
 });
 
 // DELETE /comments/:id
 // Deletes a specific comment
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
-    const query = `
-        DELETE FROM comments
-        WHERE id = ?
-    `;
+    const { error, count } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', id);
 
-    db.run(query, [id], function (err) {
-        if (err) {
-            console.error(`[COMMENT] Error deleting comment ${id}:`, err.message);
-            return res.status(500).json({ error: err.message });
-        }
+    if (error) {
+        console.error(`[COMMENT] Supabase Error deleting comment ${id}:`, error.message);
+        return res.status(500).json({ error: error.message });
+    }
 
-        if (this.changes === 0) {
-            return res.status(404).json({ error: "Comment not found" });
-        }
-
-        res.json({ message: "Comment deleted successfully" });
-    });
+    res.json({ message: "Comment deleted successfully" });
 });
 
 export default router;
