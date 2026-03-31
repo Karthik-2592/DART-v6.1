@@ -19,7 +19,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-
+app.get("/", (req, res) => {
+    res.send("Server is running!");
+});
 // Prefix all routes with /api as requested
 // This makes sure the endpoints are available at /api/users, /api/songs, etc.
 app.use("/api/users", userRoutes);
@@ -27,7 +29,7 @@ app.use("/api/songs", songRoutes);
 app.use("/api/contributors", contributorRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/playlists", playlistRoutes);
-app.use("/api/users", followRoutes); 
+app.use("/api/users", followRoutes);
 app.use("/api/comments", commentRoutes);
 
 // Base Error Handler
