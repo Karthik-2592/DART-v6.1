@@ -53,7 +53,7 @@ export default function SearchBar() {
       setIsLoading(true);
       setHasSearched(false); // Hide previous results while loading
 
-      fetch(`http://localhost:5000/songs/search?q=${encodeURIComponent(currentQuery)}`)
+      fetch(`https://web-project-seven-self.vercel.app/songs/search?q=${encodeURIComponent(currentQuery)}`)
         .then(res => res.json())
         .then(data => {
             setResults(data);

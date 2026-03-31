@@ -156,7 +156,7 @@ export default function RegisterPage() {
       if (description) formData.append("description", description);
       if (avatarFile) formData.append("profile_picture", avatarFile);
 
-      const response = await fetch("http://localhost:5000/users/register", {
+      const response = await fetch("https://web-project-seven-self.vercel.app/users/register", {
         method: "POST",
         body: formData,
       });

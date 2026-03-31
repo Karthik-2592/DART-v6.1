@@ -155,19 +155,19 @@ export default function Categories() {
         const u = JSON.parse(sessionUserStr);
         setUser(u);
 
-        fetch(`http://localhost:5000/favorites/user/${u.username}`)
+        fetch(`https://web-project-seven-self.vercel.app/favorites/user/${u.username}`)
           .then(res => res.json())
           .then(data => setFavorites(data))
           .catch(err => console.error(err));
 
-        fetch(`http://localhost:5000/playlists/user/${u.username}`)
+        fetch(`https://web-project-seven-self.vercel.app/playlists/user/${u.username}`)
           .then(res => res.json())
           .then(data => setPlaylists(data))
           .catch(err => console.error(err));
       } catch (err) { console.error(err); }
     }
 
-    fetch("http://localhost:5000/songs")
+    fetch("https://web-project-seven-self.vercel.app/songs")
       .then(res => res.json())
       .then(data => setSongs(data))
       .catch(err => console.error("Failed to fetch songs:", err));

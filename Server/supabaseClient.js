@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+dotenv.config();
 const supabase = createClient(
-    "https://urmdxbdffxmxsndgybdg.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVybWR4YmRmZnhteHNuZGd5YmRnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDYzMzg4NiwiZXhwIjoyMDkwMjA5ODg2fQ.evTu1RRyrSdQngSowLm9y1UiGi2HXk3IqOS9hqWrxJY"
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
 );
 export const BUCKET_NAME = 'Storage';
 

@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 // Import modular routes
 import userRoutes from "./routes/userRoutes.js";
@@ -12,24 +14,21 @@ import playlistRoutes from "./routes/playlistRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-const PORT = 5000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Register modular routes
-app.use("/users", userRoutes);
-app.use("/songs", songRoutes);
-app.use("/contributors", contributorRoutes);
-app.use("/favorites", favoriteRoutes);
-app.use("/playlists", playlistRoutes);
-app.use("/users", followRoutes); // Mount at /users since it covers /users/:username/follow
-app.use("/comments", commentRoutes);
+// Prefix all routes with /api as requested
+// This makes sure the endpoints are available at /api/users, /api/songs, etc.
+app.use("/api/users", userRoutes);
+app.use("/api/songs", songRoutes);
+app.use("/api/contributors", contributorRoutes);
+app.use("/api/favorites", favoriteRoutes);
+app.use("/api/playlists", playlistRoutes);
+app.use("/api/users", followRoutes); 
+app.use("/api/comments", commentRoutes);
 
 // Base Error Handler
 app.use((err, req, res, next) => {
@@ -37,6 +36,4 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: "Something went wrong!" });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+export default app;

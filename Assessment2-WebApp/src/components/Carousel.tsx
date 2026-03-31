@@ -15,7 +15,7 @@ export default function Carousel() {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/songs")
+    fetch("https://web-project-seven-self.vercel.app/songs")
       .then((res) => res.json())
       .then((data: Song[]) => {
         if (data && data.length > 0) {

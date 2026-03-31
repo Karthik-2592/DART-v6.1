@@ -17,7 +17,7 @@ export default function PlaylistQueue({ contextSongs: contextSongsProp }: { cont
   const activeId = songId ? parseInt(songId) : currentSong?.id;
 
   useEffect(() => {
-    fetch("http://localhost:5000/songs")
+    fetch("https://web-project-seven-self.vercel.app/songs")
       .then(res => res.json())
       .then(data => setSongs(data))
       .catch(err => console.error("Failed to fetch songs:", err));

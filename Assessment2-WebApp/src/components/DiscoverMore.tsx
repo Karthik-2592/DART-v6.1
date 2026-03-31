@@ -47,7 +47,7 @@ export default function DiscoverMore() {
   const [songs, setSongs] = useState<Song[]>([]);
   
   useEffect(() => {
-    fetch("http://localhost:5000/songs")
+    fetch("https://web-project-seven-self.vercel.app/songs")
       .then(res => res.json())
       .then(data => setSongs(data))
       .catch(err => console.error("Failed to fetch songs:", err));

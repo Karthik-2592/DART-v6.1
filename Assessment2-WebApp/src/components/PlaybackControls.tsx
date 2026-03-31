@@ -80,7 +80,7 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
     
     hasIncrementedRef.current = true;
     // 1. Global play count
-    fetch(`http://localhost:5000/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
+    fetch(`https://web-project-seven-self.vercel.app/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
       .catch(err => console.error("Failed to increment global play count:", err));
 
     // 2. User-specific play count (if logged in)
@@ -89,7 +89,7 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
       try {
         const user = JSON.parse(saved);
         if (user.username) {
-          fetch(`http://localhost:5000/favorites/play?username=${encodeURIComponent(user.username)}&title=${encodeURIComponent(song.title)}`, { method: "POST" })
+          fetch(`https://web-project-seven-self.vercel.app/favorites/play?username=${encodeURIComponent(user.username)}&title=${encodeURIComponent(song.title)}`, { method: "POST" })
             .catch(err => console.error("Failed to increment user play count:", err));
         }
       } catch (e) { console.error("Error parsing user for play tracking:", e); }
