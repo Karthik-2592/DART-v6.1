@@ -80,7 +80,7 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
     
     hasIncrementedRef.current = true;
     // 1. Global play count
-    fetch(`https://web-project-seven-self.vercel.app/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
+    fetch(`https://web-project-iu2t.vercel.app/api/songs/play?title=${encodeURIComponent(song.title)}`, { method: "POST" })
       .catch(err => console.error("Failed to increment global play count:", err));
 
     // 2. User-specific play count (if logged in)
@@ -89,7 +89,7 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
       try {
         const user = JSON.parse(saved);
         if (user.username) {
-          fetch(`https://web-project-seven-self.vercel.app/favorites/play?username=${encodeURIComponent(user.username)}&title=${encodeURIComponent(song.title)}`, { method: "POST" })
+          fetch(`https://web-project-iu2t.vercel.app/api/favorites/play?username=${encodeURIComponent(user.username)}&title=${encodeURIComponent(song.title)}`, { method: "POST" })
             .catch(err => console.error("Failed to increment user play count:", err));
         }
       } catch (e) { console.error("Error parsing user for play tracking:", e); }
@@ -177,7 +177,7 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
     if (audioRef.current) {
       audioRef.current.currentTime = Math.min(
         audioRef.current.duration || 0,
-        audioRef.current.currentTime + 10
+        audioRef.current.currentTime + 5
       );
     }
   }, []);
@@ -459,8 +459,8 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
             {/* Fast Forward */}
             <button
               onClick={handleFastForward}
-              className="hide-on-enter player-btn w-10 h-10 rounded-full bg-bg-card-hover border border-border flex items-center justify-center cursor-pointer"
-              title="Forward 10s"
+              className="hide-on-enter player-btn w-10 h-10 rounded-full bg-transparent border border-border flex items-center justify-center cursor-pointer"
+              title="Forward 5s"
             >
               <svg
                 className="w-4 h-4 text-fg-secondary"

@@ -39,7 +39,7 @@ export default function MusicPlayer() {
 
     // Otherwise, if we have an ID in the URL and it doesn't match current, fetch it
     if (songId && String(currentSong?.id) !== songId) {
-      fetch(`https://web-project-seven-self.vercel.app/songs/${songId}`)
+      fetch(`https://web-project-iu2t.vercel.app/api/songs/${songId}`)
         .then(res => res.json())
         .then(data => {
           if (data && !data.error) {

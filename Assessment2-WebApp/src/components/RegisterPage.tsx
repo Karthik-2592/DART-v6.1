@@ -75,27 +75,63 @@ export default function RegisterPage() {
   /* ── Step management ── */
   const [step, setStep] = useState<1 | 2>(1);
   const stepContainerRef = useRef<HTMLDivElement>(null);
+  const isFirstMount = useRef(true);
 
   /* ── Mount Animation ── */
   useEffect(() => {
-    if (cardRef.current) {
-      gsap.fromTo(
-        cardRef.current,
-        { opacity: 0, y: 30, scale: 0.95 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" }
-      );
-    }
+    const ctx = gsap.context(() => {
+      if (cardRef.current) {
+        gsap.fromTo(
+          cardRef.current,
+          { opacity: 0, y: 30, scale: 0.95 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" }
+        );
+      }
+    });
+
+    return () => ctx.revert();
   }, []);
 
   /* ── Step Transition Animation ── */
   useEffect(() => {
-    if (stepContainerRef.current) {
-      gsap.fromTo(
-        stepContainerRef.current,
-        { opacity: 0, x: step === 2 ? 30 : -30 },
-        { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }
-      );
+    // Skip animation on initial mount to avoid conflict with card entrance
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
     }
+
+    const ctx = gsap.context(() => {
+      if (stepContainerRef.current) {
+        const tl = gsap.timeline();
+        
+        // Form container slide
+        tl.fromTo(
+          stepContainerRef.current,
+          { opacity: 0, x: step === 2 ? 30 : -30 },
+          { opacity: 1, x: 0, duration: 0.4, ease: "power2.out", overwrite: "auto" }
+        );
+
+        // Staggered entrance for form items
+        const items = stepContainerRef.current.querySelectorAll(".animate-item");
+        if (items.length > 0) {
+          tl.fromTo(
+            items,
+            { opacity: 0, y: 15 },
+            { 
+              opacity: 1, 
+              y: 0, 
+              duration: 0.4, 
+              stagger: 0.05, 
+              ease: "power2.out",
+              clearProps: "all" 
+            },
+            "-=0.2"
+          );
+        }
+      }
+    });
+
+    return () => ctx.revert();
   }, [step]);
 
   /* ── Step 1 submit ── */
@@ -156,7 +192,7 @@ export default function RegisterPage() {
       if (description) formData.append("description", description);
       if (avatarFile) formData.append("profile_picture", avatarFile);
 
-      const response = await fetch("https://web-project-seven-self.vercel.app/users/register", {
+      const response = await fetch("https://web-project-iu2t.vercel.app/api/users/register", {
         method: "POST",
         body: formData,
       });
@@ -214,7 +250,7 @@ export default function RegisterPage() {
           </span>
         </div>
 
-        <h1 className="text-center font-[var(--font-family-heading)] text-2xl font-bold text-fg-primary mt-3 mb-7">
+        <h1 className="animate-item text-center font-[var(--font-family-heading)] text-2xl font-bold text-fg-primary mt-3 mb-7">
           Create Account
         </h1>
 
@@ -233,7 +269,7 @@ export default function RegisterPage() {
           {step === 1 && (
             <form onSubmit={handleStep1} noValidate key="step1">
               {/* Username */}
-              <div className="mb-4 relative group">
+              <div className="animate-item mb-4 relative group">
                 <label
                   className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
                   htmlFor="reg-username"
@@ -261,7 +297,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Email */}
-              <div className="mb-4 relative group">
+              <div className="animate-item mb-4 relative group">
                 <label
                   className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
                   htmlFor="reg-email"
@@ -289,7 +325,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Password */}
-              <div className="mb-4 relative group">
+              <div className="animate-item mb-4 relative group">
                 <label
                   className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
                   htmlFor="reg-password"
@@ -319,7 +355,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Confirm Password */}
-              <div className="mb-4 relative group">
+              <div className="animate-item mb-4 relative group">
                 <label
                   className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
                   htmlFor="reg-confirm"
@@ -349,12 +385,12 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0"
+                className="animate-item w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0"
               >
                 Continue
               </button>
-
-              <div className="flex flex-col items-center mt-6 text-[0.85rem] text-fg-muted">
+ 
+              <div className="animate-item flex flex-col items-center gap-2 mt-6 text-[0.85rem] text-fg-muted">
                 <span>
                   Already have an account?{" "}
                   <Link
@@ -362,6 +398,15 @@ export default function RegisterPage() {
                     className="text-accent no-underline font-medium transition-colors duration-200 hover:text-accent-light"
                   >
                     Log In
+                  </Link>
+                </span>
+                <span>
+                  Can't sign in?{" "}
+                  <Link
+                    to="/support"
+                    className="text-accent no-underline font-medium transition-colors duration-200 hover:text-accent-light"
+                  >
+                    Contact Support
                   </Link>
                 </span>
               </div>
@@ -380,7 +425,7 @@ export default function RegisterPage() {
               </button>
 
               {/* Avatar */}
-              <div className="mb-4">
+              <div className="animate-item mb-4">
                 <label className="block text-[0.8rem] font-medium text-fg-secondary mb-1">
                   Profile Picture (optional)
                 </label>
@@ -413,7 +458,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Display Name */}
-              <div className="mb-4 relative group">
+              <div className="animate-item mb-4 relative group">
                 <label
                   className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
                   htmlFor="reg-displayname"
@@ -443,7 +488,7 @@ export default function RegisterPage() {
               </div>
 
               {/* Description */}
-              <div className="mb-4 relative group">
+              <div className="animate-item mb-4 relative group">
                 <label
                   className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
                   htmlFor="reg-description"
@@ -468,7 +513,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0 disabled:opacity-50 disabled:grayscale"
+                className="animate-item w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0 disabled:opacity-50 disabled:grayscale"
               >
                 {isSubmitting ? "Creating Account..." : "Create Account"}
               </button>

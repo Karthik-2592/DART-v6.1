@@ -17,7 +17,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
     const userData = sessionStorage.getItem("dart_v6_1_user");
     if (userData && song) {
       const user = JSON.parse(userData);
-      fetch(`https://web-project-seven-self.vercel.app/favorites/user/${user.username}`)
+      fetch(`https://web-project-iu2t.vercel.app/api/favorites/user/${user.username}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
@@ -46,7 +46,7 @@ export default function TrackDetails({ song }: { song?: Song }) {
 
     const user = JSON.parse(userData);
     const method = nextState ? "POST" : "DELETE";
-    const url = `https://web-project-seven-self.vercel.app/favorites?username=${user.username}&title=${encodeURIComponent(song.title)}`;
+    const url = `https://web-project-iu2t.vercel.app/api/favorites?username=${user.username}&title=${encodeURIComponent(song.title)}`;
 
     try {
       const res = await fetch(url, { method });

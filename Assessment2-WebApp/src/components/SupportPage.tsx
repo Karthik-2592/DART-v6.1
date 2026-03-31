@@ -8,6 +8,8 @@ export default function SupportPage() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailErr, setEmailErr] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messageErr, setMessageErr] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -41,14 +43,29 @@ export default function SupportPage() {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
+    let hasErr = false;
+
+    if (!isLoggedIn) {
+      if (!email.trim()) {
+        setEmailErr("Email is required.");
+        hasErr = true;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setEmailErr("Please enter a valid email address.");
+        hasErr = true;
+      }
+    }
+
     if (!message.trim()) {
       setMessageErr("Please enter a message before sending.");
-      return;
+      hasErr = true;
+    } else if (message.length > 2000) {
+      setMessageErr("Message is too long (max 2,000 characters).");
+      hasErr = true;
     }
-    if (message.length > 2000) {
-      setMessageErr("Message is too long (max 2 000 characters).");
-      return;
-    }
+
+    if (hasErr) return;
+
+    setEmailErr(null);
     setMessageErr(null);
 
     /* Show success toast, then redirect */
@@ -89,78 +106,71 @@ export default function SupportPage() {
           Support
         </h1>
       <div ref = {stepContainerRef}>
-        {!isLoggedIn ? (
-          /* ── Not logged in ── */
-        
-          <div className="text-center py-4">
-            <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+        <form onSubmit={handleSend} noValidate>
+          {!isLoggedIn ? (
+            <div className="mb-4 animate-item relative group">
+              <label
+                className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
+                htmlFor="support-email"
               >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+                Your Email
+              </label>
+              <input
+                id="support-email"
+                type="email"
+                className={`w-full px-4 py-3 rounded-[10px] border-[1.5px] bg-bg-primary text-fg-primary text-[0.95rem] outline-none transition-all duration-300 placeholder:text-fg-muted hover:border-accent-dark focus:border-accent focus:bg-bg-secondary focus:shadow-[0_0_0_3px_rgba(233,30,140,0.12),0_0_20px_rgba(233,30,140,0.08)] ${emailErr ? "border-[#ff4466] shadow-[0_0_0_3px_rgba(255,68,102,0.12)]" : "border-border"}`}
+                placeholder="How can we reach you?"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailErr) setEmailErr(null);
+                }}
+              />
+              <p className={`text-[0.75rem] text-[#ff4466] mt-1 min-h-[1rem] transition-all duration-250 ${emailErr ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"}`}>
+                {emailErr ?? "\u00A0"}
+              </p>
             </div>
-            <p className="text-fg-secondary mb-6 text-[0.95rem] leading-[1.6]">
-              You need to be logged in to send a support request. Please log in
-              or create an account first.
-            </p>
-            <Link to="/login" className="no-underline">
-              <button className="w-full p-[0.85rem] rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0">
-                Go to Login
-              </button>
-            </Link>
-          </div>
-        ) : (
-          /* ── Logged in ── */
-          <form onSubmit={handleSend} noValidate>
-            <p className="text-fg-secondary text-[0.9rem] mb-5 leading-[1.6]">
+          ) : (
+            <p className="text-fg-secondary text-[0.9rem] mb-5 leading-[1.6] animate-item">
               Hi <strong className="text-fg-primary">{displayName}</strong>,
               how can we help? Describe your issue or question below and our
               team will get back to you.
             </p>
+          )}
 
-            <div className="mb-4 relative group">
-              <label
-                className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
-                htmlFor="support-message"
-              >
-                Your Message
-              </label>
-              <textarea
-                id="support-message"
-                className={`w-full px-4 py-3 rounded-[10px] border-[1.5px] bg-bg-primary text-fg-primary text-[0.95rem] outline-none resize-y min-h-[100px] transition-all duration-300 placeholder:text-fg-muted hover:border-accent-dark focus:border-accent focus:bg-bg-secondary focus:shadow-[0_0_0_3px_rgba(233,30,140,0.12),0_0_20px_rgba(233,30,140,0.08)] ${messageErr ? "border-[#ff4466] shadow-[0_0_0_3px_rgba(255,68,102,0.12)]" : "border-border"}`}
-                placeholder="Describe your issue or question…"
-                value={message}
-                onChange={(e) => {
-                  setMessage(e.target.value);
-                  if (messageErr && e.target.value.trim()) setMessageErr(null);
-                }}
-                rows={5}
-              />
-              <p
-                className={`text-[0.75rem] text-[#ff4466] mt-1 min-h-[1rem] leading-[1.3] transition-all duration-250 ${messageErr ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"}`}
-              >
-                {messageErr ?? "\u00A0"}
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-              disabled={showToast}
+          <div className="mb-4 animate-item relative group">
+            <label
+              className="block text-[0.8rem] font-medium text-fg-secondary mb-1 transition-colors group-focus-within:text-accent-light"
+              htmlFor="support-message"
             >
-              {showToast ? "Sending…" : "Send Message"}
-            </button>
-          </form>
-        )}
+              Your Message
+            </label>
+            <textarea
+              id="support-message"
+              className={`w-full px-4 py-3 rounded-[10px] border-[1.5px] bg-bg-primary text-fg-primary text-[0.95rem] outline-none resize-y min-h-[100px] transition-all duration-300 placeholder:text-fg-muted hover:border-accent-dark focus:border-accent focus:bg-bg-secondary focus:shadow-[0_0_0_3px_rgba(233,30,140,0.12),0_0_20px_rgba(233,30,140,0.08)] ${messageErr ? "border-[#ff4466] shadow-[0_0_0_3px_rgba(255,68,102,0.12)]" : "border-border"}`}
+              placeholder="Describe your issue or question…"
+              value={message}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                if (messageErr && e.target.value.trim()) setMessageErr(null);
+              }}
+              rows={5}
+            />
+            <p
+              className={`text-[0.75rem] text-[#ff4466] mt-1 min-h-[1rem] leading-[1.3] transition-all duration-250 ${messageErr ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"}`}
+            >
+              {messageErr ?? "\u00A0"}
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            className="animate-item w-full p-[0.85rem] mt-2 rounded-[12px] border-none cursor-pointer text-base font-semibold text-white bg-gradient-to-br from-accent to-accent-light transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(233,30,140,0.3)] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+            disabled={showToast}
+          >
+            {showToast ? "Sending…" : "Send Message"}
+          </button>
+        </form>
 
         <div className="flex flex-col items-center mt-6">
           <Link

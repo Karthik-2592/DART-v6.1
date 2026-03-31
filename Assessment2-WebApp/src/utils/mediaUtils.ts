@@ -10,7 +10,7 @@ export const getMediaUrl = (path: string | null | undefined, type?: 'audio' | 'c
   // If it's already a full URL (Supabase Signed URL or external), return it as-is
   if (path.startsWith('http')) return path;
   
-  const baseUrl = 'https://web-project-seven-self.vercel.app';
+  const baseUrl = 'https://web-project-iu2t.vercel.app';
   
   // Remove redundant 'Storage/' or 'storage/' prefix if present in the legacy path string
   // This helps when the frontend hasn't been updated to match the new DB record format yet.

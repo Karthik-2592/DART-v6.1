@@ -5,7 +5,7 @@ import { getGenreTheme } from "../utils/genreTheme";
 import { type Song } from "./Categories";
 import { getMediaUrl } from "../utils/mediaUtils";
 
-export default function Carousel() {
+export default function Carousel({ songs: allSongs }: { songs: Song[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [songs, setSongs] = useState<Song[]>([]);
   const navigate = useNavigate();
@@ -15,21 +15,16 @@ export default function Carousel() {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    fetch("https://web-project-seven-self.vercel.app/songs")
-      .then((res) => res.json())
-      .then((data: Song[]) => {
-        if (data && data.length > 0) {
-          const sorted = [...data].sort((a, b) => {
-            if ((b.play_count || 0) !== (a.play_count || 0)) {
-              return (b.play_count || 0) - (a.play_count || 0);
-            }
-            return 0.5 - Math.random();
-          });
-          setSongs(sorted.slice(0, 5));
+    if (allSongs && allSongs.length > 0) {
+      const sorted = [...allSongs].sort((a, b) => {
+        if ((b.play_count || 0) !== (a.play_count || 0)) {
+          return (b.play_count || 0) - (a.play_count || 0);
         }
-      })
-      .catch((err) => console.error("Carousel fetch error:", err));
-  }, []);
+        return 0.5 - Math.random();
+      });
+      setSongs(sorted.slice(0, 5));
+    }
+  }, [allSongs]);
 
   useEffect(() => {
     if (songs.length > 0 && sectionRef.current) {

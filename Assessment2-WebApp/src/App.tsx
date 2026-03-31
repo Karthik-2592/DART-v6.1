@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -7,7 +7,7 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import Carousel from "./components/Carousel";
 import SearchBar from "./components/SearchBar";
-import Categories from "./components/Categories";
+import Categories, { type Song } from "./components/Categories";
 import CallToAction from "./components/CallToAction";
 import Footer from "./components/Footer";
 import Placeholder from "./components/Placeholder";
@@ -21,6 +21,15 @@ import MiniPlayer from "./components/MiniPlayer";
 gsap.registerPlugin(ScrollTrigger);
 
 function LandingPage() {
+  const [songs, setSongs] = useState<Song[]>([]);
+
+  useEffect(() => {
+    fetch("https://web-project-iu2t.vercel.app/api/songs")
+      .then(res => res.json())
+      .then(data => setSongs(data || []))
+      .catch(err => console.error("LandingPage fetch error:", err));
+  }, []);
+
   useEffect(() => {
     const ctx = gsap.context(() => {
       const initScrollTriggers = () => {
@@ -56,15 +65,15 @@ function LandingPage() {
     });
 
     return () => ctx.revert();
-  }, []);
+  }, [songs]); // Refresh triggers when songs are loaded
 
   return (
     <>
       <Navbar />
       <main className="pt-24 pb-20 space-y-16">
-        <Carousel />
+        <Carousel songs={songs} />
         <SearchBar />
-        <Categories />
+        <Categories songs={songs} />
         <CallToAction />
       </main>
       <Footer />

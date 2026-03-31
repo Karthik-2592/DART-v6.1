@@ -36,7 +36,7 @@ export default function Comments({ songId }: CommentsProps) {
 
   const fetchComments = useCallback(async () => {
     try {
-      const response = await fetch(`https://web-project-seven-self.vercel.app/comments/song/${songId}`);
+      const response = await fetch(`https://web-project-iu2t.vercel.app/api/comments/song/${songId}`);
       if (response.ok) {
         const data = await response.json();
         setComments(data);
@@ -59,7 +59,7 @@ export default function Comments({ songId }: CommentsProps) {
     
     setIsSubmitting(true);
     try {
-      const response = await fetch("https://web-project-seven-self.vercel.app/comments", {
+      const response = await fetch("https://web-project-iu2t.vercel.app/api/comments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -88,7 +88,7 @@ export default function Comments({ songId }: CommentsProps) {
 
   const handleLike = async (commentId: number) => {
     try {
-      const response = await fetch(`https://web-project-seven-self.vercel.app/comments/${commentId}/like`, {
+      const response = await fetch(`https://web-project-iu2t.vercel.app/api/comments/${commentId}/like`, {
         method: "POST"
       });
       if (response.ok) {

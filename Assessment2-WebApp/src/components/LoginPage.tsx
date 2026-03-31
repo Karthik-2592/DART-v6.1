@@ -49,7 +49,7 @@ export default function LoginPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("https://web-project-seven-self.vercel.app/users/login", {
+      const response = await fetch("https://web-project-iu2t.vercel.app/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
