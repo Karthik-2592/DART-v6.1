@@ -87,11 +87,12 @@ router.get('/', async (req, res) => {
 
     if (title) query = query.eq('title', title);
 
-    console.log(`[SONG] Listing tracks...`);
     const { data: rows, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
 
-    res.json(await formatSongRows(rows));
+    const formatted = await formatSongRows(rows);
+    console.log(`[SONG] Listing tracks... Found ${formatted.length} tracks.`);
+    res.json(formatted);
 });
 
 // GET /songs/search
@@ -99,14 +100,16 @@ router.get('/search', async (req, res) => {
     const { q } = req.query;
     if (!q) return res.status(400).json({ error: "Search query 'q' required" });
 
-    console.log(`[SONG] Searching tracks matching: "${q}"`);
     const { data: rows, error } = await supabase
         .from('songs')
         .select('id, title, genre, release_year, cover_path, audio_path, play_count, song_contributors(users(display_name, username))')
         .or(`title.ilike.%${q}%,genre.ilike.%${q}%`);
 
     if (error) return res.status(500).json({ error: error.message });
-    res.json(await formatSongRows(rows));
+
+    const formatted = await formatSongRows(rows);
+    console.log(`[SONG] Search found ${formatted.length} tracks for query: "${q}"`);
+    res.json(formatted);
 });
 
 // GET /songs/:id
@@ -124,15 +127,24 @@ router.get('/:id', async (req, res) => {
     if (!row) return res.status(404).json({ error: "Song not found" });
 
     const formatted = await formatSongRows([row]);
-    res.json(formatted[0]);
+    const track = formatted[0];
+    console.log(`[SONG] Single track retrieved: "${track.title}" (ID: ${track.id})`);
+    res.json(track);
 });
 
 // POST /songs (Upload Track)
 router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio', maxCount: 1 }]), async (req, res) => {
-    const { title, genre, release_year, artists } = req.body;
+    console.log(`[SONG] POST Request body:`, req.body);
+    const { title, genre, release_year, artists} = req.body;
 
-    if (!req.files['audio']) return res.status(400).json({ error: "Audio file is required" });
-    if (!title || title.length > 128) return res.status(400).json({ error: "Valid title required" });
+    if (!req.files || !req.files['audio']) {
+        console.warn(`[SONG] Upload rejected: Missing audio file.`);
+        return res.status(400).json({ error: "Audio file is required" });
+    }
+    if (!title || title.trim().length === 0 || title.length > 128) {
+        console.warn(`[SONG] Upload rejected: Invalid title "${title}".`);
+        return res.status(400).json({ error: "Valid title required (1-128 chars)" });
+    }
 
     const year = parseInt(release_year, 10);
     const artistNames = artists ? artists.split(',') : [];
@@ -151,18 +163,25 @@ router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio',
     if (req.files['cover']) {
         const coverFile = req.files['cover'][0];
         const coverName = generateFileName(title, 'cover', coverFile.originalname);
-        cover_path = `storage/cover/${coverName}`;
-        const { error: coverErr } = await supabase.storage.from(BUCKET_NAME).upload(cover_path, coverFile.buffer, { contentType: coverFile.mimetype });
+        const storagePath = `cover/${coverName}`;
+        cover_path = `storage/${storagePath}`;
+        
+        const { error: coverErr } = await supabase.storage.from(BUCKET_NAME).upload(storagePath, coverFile.buffer, { contentType: coverFile.mimetype });
         if (coverErr) return res.status(500).json({ error: "Cover upload failed" });
     }
 
     // Upload Audio
     const audioFile = req.files['audio'][0];
     const audioName = generateFileName(title, 'audio', audioFile.originalname);
-    const audio_path = `storage/audio/${audioName}`;
-    const { error: audioErr } = await supabase.storage.from(BUCKET_NAME).upload(audio_path, audioFile.buffer, { contentType: audioFile.mimetype });
+    const audioStoragePath = `audio/${audioName}`;
+    const audio_path = `storage/${audioStoragePath}`;
+    
+    const { error: audioErr } = await supabase.storage.from(BUCKET_NAME).upload(audioStoragePath, audioFile.buffer, { contentType: audioFile.mimetype });
     if (audioErr) {
-        if (cover_path) await supabase.storage.from(BUCKET_NAME).remove([cover_path]);
+        if (cover_path) {
+            const cleanCover = cover_path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
+            await supabase.storage.from(BUCKET_NAME).remove([cleanCover]);
+        }
         return res.status(500).json({ error: "Audio upload failed" });
     }
 
@@ -188,8 +207,12 @@ router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio',
 
 // PUT /songs (Edit Track)
 router.put('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio', maxCount: 1 }]), async (req, res) => {
-    const { id } = req.query;
-    if (!id) return res.status(400).json({ error: "ID required" });
+    console.log(`[SONG] PUT Request query:`, req.query);
+    console.log(`[SONG] PUT Request body:`, req.body);
+    
+    const { id: queryId } = req.query;
+    const id = parseInt(queryId, 10);
+    if (!queryId || isNaN(id)) return res.status(400).json({ error: "Valid numeric ID required in query params" });
 
     const { title, genre, release_year, artists } = req.body;
     const updatePayload = {};
@@ -198,28 +221,38 @@ router.put('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio', 
     if (release_year) updatePayload.release_year = parseInt(release_year, 10);
 
     console.log(`[SONG] Editing track ID: ${id}`);
+    
+    // Check if song exists
+    const { data: row } = await supabase.from('songs').select('id, cover_path, audio_path, title').eq('id', id).single();
+    if (!row) {
+        console.warn(`[SONG] Edit rejected: Song ID ${id} not found.`);
+        return res.status(404).json({ error: "Song not found" });
+    }
 
     // Handle File Replacement
     if (req.files['cover'] || req.files['audio']) {
-        const { data: row } = await supabase.from('songs').select('cover_path, audio_path, title').eq('id', id).single();
-        if (!row) return res.status(404).json({ error: "Song not found" });
-
         if (req.files['cover']) {
             const file = req.files['cover'][0];
             const name = generateFileName(title || row.title, 'cover', file.originalname);
-            const path = `cover/${name}`;
-            await supabase.storage.from(BUCKET_NAME).upload(path, file.buffer, { contentType: file.mimetype, upsert: true });
-            if (row.cover_path) await supabase.storage.from(BUCKET_NAME).remove([row.cover_path]);
-            updatePayload.cover_path = path;
+            const storagePath = `cover/${name}`;
+            await supabase.storage.from(BUCKET_NAME).upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: true });
+            if (row.cover_path) {
+                const cleanOld = row.cover_path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
+                await supabase.storage.from(BUCKET_NAME).remove([cleanOld]);
+            }
+            updatePayload.cover_path = `storage/${storagePath}`;
         }
 
         if (req.files['audio']) {
             const file = req.files['audio'][0];
             const name = generateFileName(title || row.title, 'audio', file.originalname);
-            const path = `audio/${name}`;
-            await supabase.storage.from(BUCKET_NAME).upload(path, file.buffer, { contentType: file.mimetype, upsert: true });
-            if (row.audio_path) await supabase.storage.from(BUCKET_NAME).remove([row.audio_path]);
-            updatePayload.audio_path = path;
+            const storagePath = `audio/${name}`;
+            await supabase.storage.from(BUCKET_NAME).upload(storagePath, file.buffer, { contentType: file.mimetype, upsert: true });
+            if (row.audio_path) {
+                const cleanOld = row.audio_path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
+                await supabase.storage.from(BUCKET_NAME).remove([cleanOld]);
+            }
+            updatePayload.audio_path = `storage/${storagePath}`;
         }
     }
 

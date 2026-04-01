@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [targetUser, setTargetUser] = useState<{ username: string; displayName: string; description?: string; profile_picture?: string } | null>(null);
   const [isSelf, setIsSelf] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const genreOptions = categoriesGenres.map(g => g.name);
 
@@ -94,7 +95,7 @@ export default function ProfilePage() {
 
   const [deletePass, setDeletePass] = useState("");
   const [playlistSearch, setPlaylistSearch] = useState("");
-  const { contextSongs: allSongsFromContext } = usePlayer();
+  const { allSongs: allSongsFromContext } = usePlayer();
   const allSongs = allSongsFromContext || [];
   const [uploadedSongs, setUploadedSongs] = useState<Song[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
@@ -255,6 +256,8 @@ export default function ProfilePage() {
       return;
     }
 
+    if (isSubmitting) return;
+
     const formData = new FormData();
     formData.append("title", songForm.title);
     formData.append("genre", songForm.genre);
@@ -263,6 +266,7 @@ export default function ProfilePage() {
     if (songForm.coverFile) formData.append("cover", songForm.coverFile);
     if (songForm.audioFile) formData.append("audio", songForm.audioFile);
 
+    setIsSubmitting(true);
     try {
       const url = isEdit ? `${API_URL}/songs?id=${songId}` : `${API_URL}/songs`;
       const response = await fetch(url, {
@@ -285,6 +289,8 @@ export default function ProfilePage() {
     } catch (err) {
       console.error(err);
       setSongForm(prev => ({ ...prev, error: "Connection error" }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -302,6 +308,9 @@ export default function ProfilePage() {
       return;
     }
 
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       const url = isEdit
         ? `${API_URL}/playlists?name=${encodeURIComponent(oldName)}&creator=${user?.username}`
@@ -334,6 +343,8 @@ export default function ProfilePage() {
     } catch (err) {
       console.error(err);
       setPlaylistForm(prev => ({ ...prev, error: "Connection error" }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -344,6 +355,8 @@ export default function ProfilePage() {
       message: "Are you sure you want to delete this track? This action cannot be undone.",
       type: "danger",
       onConfirm: async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
         try {
           const res = await fetch(`${API_URL}/songs?id=${songId}`, { method: "DELETE" });
           if (res.ok) {
@@ -360,6 +373,7 @@ export default function ProfilePage() {
             });
           }
         } catch (err) { console.error(err); }
+        finally { setIsSubmitting(false); }
       }
     });
   };
@@ -371,6 +385,8 @@ export default function ProfilePage() {
       message: `Are you sure you want to delete the playlist "${plName}"?`,
       type: "danger",
       onConfirm: async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
         try {
           const res = await fetch(`${API_URL}/playlists?name=${encodeURIComponent(plName)}&creator=${user?.username}`, { method: "DELETE" });
           if (res.ok) {
@@ -387,6 +403,7 @@ export default function ProfilePage() {
             });
           }
         } catch (err) { console.error(err); }
+        finally { setIsSubmitting(false); }
       }
     });
   };
@@ -624,9 +641,22 @@ export default function ProfilePage() {
                 <div className="flex gap-4">
                   <div className="flex-1 space-y-2">
                     <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Genre</label>
-                    <select value={songForm.genre} onChange={e => setSongForm(prev => ({ ...prev, genre: e.target.value, error: null }))} className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent appearance-none cursor-pointer">
-                      {genreOptions.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
+                    <div className="relative group/select">
+                      <select 
+                        value={songForm.genre} 
+                        onChange={e => setSongForm(prev => ({ ...prev, genre: e.target.value, error: null }))} 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent appearance-none cursor-pointer relative z-10 hover:bg-white/10 transition-colors"
+                      >
+                        {genreOptions.map(g => (
+                          <option key={g} value={g} className="bg-bg-card text-white">{g}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none z-20 group-hover/select:text-accent transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex-1 space-y-2">
                     <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Release Year</label>
@@ -667,8 +697,8 @@ export default function ProfilePage() {
               )}
 
               <div className="pt-4 flex gap-4">
-                <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">Cancel</button>
-                <button onClick={handleSongSubmit} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">{isEdit ? "Commit Changes" : "Confirm Upload"}</button>
+                <button onClick={closeModal} disabled={isSubmitting} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50">Cancel</button>
+                <button onClick={handleSongSubmit} disabled={isSubmitting} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all disabled:opacity-50">{isSubmitting ? "Processing..." : (isEdit ? "Commit Changes" : "Confirm Upload")}</button>
               </div>
             </div>
           </div>
@@ -761,8 +791,8 @@ export default function ProfilePage() {
                 )}
 
                 <div className="pt-4 flex gap-4">
-                  <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">Cancel</button>
-                  <button onClick={handlePlaylistSubmit} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">{isEdit ? "Commit Changes" : "Assemble Mix"}</button>
+                  <button onClick={closeModal} disabled={isSubmitting} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50">Cancel</button>
+                  <button onClick={handlePlaylistSubmit} disabled={isSubmitting} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all disabled:opacity-50">{isSubmitting ? "Assembling..." : (isEdit ? "Commit Changes" : "Assemble Mix")}</button>
                 </div>
               </div>
             </div>
@@ -800,39 +830,51 @@ export default function ProfilePage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase tracking-widest font-bold text-accent px-1">Professional Bio</label>
-                  <textarea id="edit-bio" rows={4} placeholder="Tell the world your story..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent resize-none no-scrollbar" />
+                  <textarea id="edit-bio" rows={4} defaultValue={user?.description} placeholder="Tell the world your story..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-accent resize-none no-scrollbar" />
                 </div>
               </div>
               <div className="pt-4 flex gap-4">
-                <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all">Cancel</button>
-                <button onClick={async () => {
-                  const displayName = (document.getElementById('edit-display-name') as HTMLInputElement)?.value;
-                  const description = (document.getElementById('edit-bio') as HTMLTextAreaElement)?.value;
-                  if (user?.username) {
-                    try {
-                      const formData = new FormData();
-                      if (displayName) formData.append("display_name", displayName);
-                      if (description) formData.append("description", description);
-                      if (profileFileRef.current?.files?.[0]) {
-                        formData.append("profile_picture", profileFileRef.current.files[0]);
-                      }
+                <button onClick={closeModal} disabled={isSubmitting} className="flex-1 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50">Cancel</button>
+                <button 
+                  onClick={async () => {
+                    const displayName = (document.getElementById('edit-display-name') as HTMLInputElement)?.value;
+                    const description = (document.getElementById('edit-bio') as HTMLTextAreaElement)?.value;
+                    if (user?.username) {
+                      if (isSubmitting) return;
+                      setIsSubmitting(true);
+                      try {
+                        const formData = new FormData();
+                        if (displayName) formData.append("display_name", displayName);
+                        if (description) formData.append("description", description);
+                        if (profileFileRef.current?.files?.[0]) {
+                          formData.append("profile_picture", profileFileRef.current.files[0]);
+                        }
 
-                      const res = await fetch(`${API_URL}/users?username=${user.username}`, {
-                        method: "PUT",
-                        body: formData
-                      });
-                      const data = await res.json();
+                        const res = await fetch(`${API_URL}/users?username=${user.username}`, {
+                          method: "PUT",
+                          body: formData
+                        });
+                        const data = await res.json();
 
-                      // Update local state to reflect changes
-                      if (data.profile_picture || displayName) {
-                        const updated = { ...user, displayName: displayName || user.displayName, profile_picture: data.profile_picture || user.profile_picture };
-                        setUser(updated);
-                        sessionStorage.setItem("dart_v6_1_user", JSON.stringify(updated));
+                        // Update local state to reflect changes
+                        if (data.profile_picture || displayName) {
+                          const updated = { ...user, displayName: displayName || user.displayName, profile_picture: data.profile_picture || user.profile_picture, description: description || user.description };
+                          setUser(updated);
+                          sessionStorage.setItem("dart_v6_1_user", JSON.stringify(updated));
+                        }
+                      } catch (err) { 
+                        console.error(err); 
+                      } finally { 
+                        setIsSubmitting(false); 
                       }
-                    } catch (err) { console.error(err); }
-                  }
-                  closeModal();
-                }} className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all">Update Identity</button>
+                    }
+                    closeModal();
+                  }} 
+                  disabled={isSubmitting} 
+                  className="flex-[2] py-4 bg-accent text-white font-bold rounded-2xl hover:bg-accent-light shadow-lg transition-all disabled:opacity-50"
+                >
+                  {isSubmitting ? "Refining..." : "Update Identity"}
+                </button>
               </div>
             </div>
           </div>
@@ -853,9 +895,11 @@ export default function ProfilePage() {
             <div className="mt-10 flex gap-4">
               <button onClick={closeModal} className="flex-1 py-4 bg-white/5 text-white rounded-2xl hover:bg-white/10">Cancel</button>
               <button
-                disabled={!deletePass}
+                disabled={!deletePass || isSubmitting}
                 onClick={async () => {
                   if (user?.username) {
+                    if (isSubmitting) return;
+                    setIsSubmitting(true);
                     try {
                       const res = await fetch(`${API_URL}/users?username=${user.username}`, { 
                         method: "DELETE",
@@ -874,14 +918,17 @@ export default function ProfilePage() {
                           type: "danger",
                           onConfirm: () => setConfirmDialog(p => ({ ...p, isOpen: false }))
                         });
-                        return;
                       }
-                    } catch (err) { console.error(err); }
+                    } catch (err) { 
+                      console.error(err); 
+                    } finally { 
+                      setIsSubmitting(false); 
+                    }
                   }
                 }}
                 className="flex-[2] py-4 bg-red-500 text-white font-bold rounded-2xl disabled:opacity-30 disabled:grayscale transition-all"
               >
-                Delete Forever
+                {isSubmitting ? "Deleting..." : "Delete Forever"}
               </button>
             </div>
           </div>
@@ -915,9 +962,10 @@ export default function ProfilePage() {
             </button>
             <button 
               onClick={confirmDialog.onConfirm}
-              className={`flex-1 py-3 text-white font-bold rounded-xl transition-all cursor-pointer border-none shadow-lg ${isDanger ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-accent hover:bg-accent-light shadow-accent/20'}`}
+              disabled={isSubmitting}
+              className={`flex-1 py-3 text-white font-bold rounded-xl transition-all cursor-pointer border-none shadow-lg disabled:opacity-50 ${isDanger ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-accent hover:bg-accent-light shadow-accent/20'}`}
             >
-              Confirm
+              {isSubmitting ? "Wait..." : "Confirm"}
             </button>
           </div>
         </div>
@@ -1000,6 +1048,11 @@ export default function ProfilePage() {
       <Footer />
       {renderUniversalModal()}
       {renderConfirmDialog()}
+      {isSubmitting && (
+        <div className="fixed bottom-0 left-0 w-full h-[3px] bg-white/5 z-[250] overflow-hidden">
+          <div className="h-full bg-accent animate-[loading-bar_2s_infinite_linear] origin-left" />
+        </div>
+      )}
     </div>
   );
 }

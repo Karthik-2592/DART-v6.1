@@ -24,8 +24,8 @@ import MiniPlayer from "./components/MiniPlayer";
 gsap.registerPlugin(ScrollTrigger);
 
 function LandingPage() {
-  const { contextSongs } = usePlayer();
-  const songs = contextSongs || [];
+  const { allSongs } = usePlayer();
+  const songs = allSongs || [];
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -79,17 +79,17 @@ function LandingPage() {
 }
 
 function App() {
-  const { setContextSongs, contextSongs } = usePlayer();
+  const { setAllSongs, allSongs } = usePlayer();
 
   useEffect(() => {
-    // Only fetch if songs are not already loaded
-    if (!contextSongs || contextSongs.length === 0) {
+    // Only fetch if songs are not already loaded in the library
+    if (!allSongs || allSongs.length === 0) {
       fetch(`${API_URL}/songs`)
         .then(res => res.json())
-        .then(data => setContextSongs(data || []))
+        .then(data => setAllSongs(data || []))
         .catch(err => console.error("App fetch error:", err));
     }
-  }, [setContextSongs, contextSongs]);
+  }, [setAllSongs, allSongs]);
 
   return (
     <BrowserRouter>

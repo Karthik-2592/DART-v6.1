@@ -45,8 +45,8 @@ function GenreRow({ genre, songs }: { genre: Genre, songs: Song[] }) {
 }
 
 export default function DiscoverMore() {
-  const { contextSongs } = usePlayer();
-  const songs = contextSongs || [];
+  const { allSongs } = usePlayer();
+  const songs = allSongs || [];
 
   // Pick 3 random genres to show
   const genresToShow = useMemo(() => {

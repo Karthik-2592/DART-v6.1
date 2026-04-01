@@ -2,24 +2,9 @@ import express from 'express';
 import supabase from '../supabaseClient.js';
 import { resolveUser, resolveSong } from '../resolvers.js';
 
-const router = express.Router();
+import { formatSongRows } from '../utils/formatters.js';
 
-// Helper: Format song data to match legacy SQLite structure (GROUP_CONCAT simulation)
-function formatSongRows(rows) {
-    return rows.map(row => {
-        const contributors = row.song_contributors || [];
-        const artists = contributors.map(c => c.users?.display_name).filter(Boolean).join(', ');
-        const artist_usernames = contributors.map(c => c.users?.username).filter(Boolean).join(', ');
-        
-        // Remove the nested relationship data and add flat fields
-        const { song_contributors, ...songData } = row;
-        return {
-            ...songData,
-            artists,
-            artist_usernames
-        };
-    });
-}
+const router = express.Router();
 
 // POST /contributors - Add contributor(s) by song title
 router.post('/contributors', async (req, res) => {
@@ -35,7 +20,7 @@ router.post('/contributors', async (req, res) => {
     const contributors = userIds.map(uid => ({ song_id: songId, user_id: uid }));
 
     console.log(`[CONTRIBUTOR] Adding ${userIds.length} contributor(s) to track: ${title} (ID: ${songId})`);
-    
+
     // Supabase insert with upsert behavior or just direct insert if duplicates aren't an issue.
     // PostgreSQL equivalent of 'INSERT OR IGNORE' is 'ON CONFLICT DO NOTHING'.
     // In Supabase client, we use upsert with specific options or just handle it gracefully.
@@ -48,7 +33,7 @@ router.post('/contributors', async (req, res) => {
         console.error(`[CONTRIBUTOR] Supabase Error adding contributors to ${title}: ${error.message}`);
         return res.status(500).json({ error: error.message });
     }
-    
+
     const changes = data ? data.length : 0;
     console.log(`[CONTRIBUTOR] Successfully added ${changes} contributor(s) (including existing) to "${title}".`);
     res.json({ message: "Contributors added/synced successfully", count: changes });
@@ -63,7 +48,7 @@ router.get('/contributors', async (req, res) => {
     if (!songId) return res.status(404).json({ error: "Song not found" });
 
     console.log(`[CONTRIBUTOR] Fetching contributor list for track: ${title} (ID: ${songId})`);
-    
+
     const { data: rows, error } = await supabase
         .from('song_contributors')
         .select(`
@@ -80,7 +65,7 @@ router.get('/contributors', async (req, res) => {
         console.error(`[CONTRIBUTOR] Supabase Error fetching contributors for ${title}: ${error.message}`);
         return res.status(500).json({ error: error.message });
     }
-    
+
     const flatRows = rows.map(r => r.users).filter(Boolean);
     console.log(`[CONTRIBUTOR] Found ${flatRows.length} contributor(s) for "${title}".`);
     res.json(flatRows);
@@ -95,7 +80,7 @@ router.get('/contributions', async (req, res) => {
     if (!userId) return res.status(404).json({ error: "User not found" });
 
     console.log(`[CONTRIBUTOR] Fetching track contributions for user: ${username} (ID: ${userId})`);
-    
+
     // We need songs where user_id = userId in song_contributors, 
     // AND we want to fetch all other artists for those songs.
     const { data: contributionRows, error: cError } = await supabase
@@ -104,7 +89,7 @@ router.get('/contributions', async (req, res) => {
         .eq('user_id', userId);
 
     if (cError) return res.status(500).json({ error: cError.message });
-    
+
     const songIds = contributionRows.map(r => r.song_id);
     if (songIds.length === 0) return res.json([]);
 
@@ -125,8 +110,7 @@ router.get('/contributions', async (req, res) => {
         console.error(`[CONTRIBUTOR] Supabase Error fetching contributions for ${username}: ${error.message}`);
         return res.status(500).json({ error: error.message });
     }
-    
-    const formatted = formatSongRows(rows);
+    const formatted = await formatSongRows(rows);
     console.log(`[CONTRIBUTOR] Found ${formatted.length} contributed track(s) for user "${username}".`);
     res.json(formatted);
 });

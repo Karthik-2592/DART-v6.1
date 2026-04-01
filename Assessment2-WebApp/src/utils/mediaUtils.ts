@@ -14,7 +14,7 @@ export const getMediaUrl = (path: string | null | undefined, type?: 'audio' | 'c
   
   // If a type is specified, use the specific legacy static route
   if (type) {
-    return `${baseUrl}/${type}/${encodeURIComponent(cleanPath)}`;
+    return `${baseUrl}/${encodeURIComponent(cleanPath)}`;
   }
   
   // Fallback: try to split and encode if it looks like a path

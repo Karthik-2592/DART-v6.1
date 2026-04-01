@@ -10,6 +10,8 @@ interface PlayerContextType {
   setCurrentSong: (song: Song | undefined) => void;
   contextSongs: Song[] | undefined;
   setContextSongs: (songs: Song[] | undefined) => void;
+  allSongs: Song[] | undefined;
+  setAllSongs: (songs: Song[] | undefined) => void;
   isMiniPlayerOpen: boolean;
   setIsMiniPlayerOpen: (open: boolean) => void;
   wasPoppedOutByUser: boolean;
@@ -34,6 +36,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const [currentSong, setCurrentSong] = useState<Song | undefined>();
   const [contextSongs, setContextSongs] = useState<Song[] | undefined>();
+  const [allSongs, setAllSongs] = useState<Song[] | undefined>();
   const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
   const [wasPoppedOutByUser, setWasPoppedOutByUser] = useState(false);
 
@@ -93,6 +96,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setCurrentSong,
       contextSongs,
       setContextSongs,
+      allSongs,
+      setAllSongs,
       isMiniPlayerOpen,
       setIsMiniPlayerOpen,
       wasPoppedOutByUser,

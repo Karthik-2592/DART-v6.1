@@ -10,9 +10,9 @@ export const BUCKET_NAME = 'Storage';
 /**
  * Generates a signed URL for a given path in the main bucket.
  */
-export const getSignedURL = async (path, expiry = 3600) => {
+export const getSignedURL = async (path, expiry = 180) => {
     if (!path) return null;
-    
+
     // Remove 'storage/' or 'Storage/' prefix if it's there
     let cleanPath = path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
 

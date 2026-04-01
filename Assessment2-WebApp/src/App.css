@@ -403,3 +403,10 @@ body.has-entered .hide-on-enter {
   60% { transform: translateX(-4px); }
   80% { transform: translateX(3px); }
 }
+
+@keyframes loading-bar {
+  0% { transform: translateX(-100%) scaleX(0.2); }
+  50% { transform: translateX(-30%) scaleX(0.5); }
+  100% { transform: translateX(100%) scaleX(0.2); }
+}
+

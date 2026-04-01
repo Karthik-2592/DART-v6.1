@@ -179,6 +179,32 @@ export default function Categories({ songs }: { songs: Song[] }) {
 
   return (
     <section className="content-margins pb-24 pt-8">
+      <div className="mb-16">
+        <h2 className="text-4xl font-extrabold font-[var(--font-family-heading)] text-fg-primary mb-12 tracking-tighter">
+          🎵 Browse by Genre
+        </h2>
+      </div>
+      {genres.map((genre) => (
+        <GenreSection key={genre.name} genre={genre} songs={songs} />
+      ))}
+
+      {user && favorites.length > 0 && (
+        <div className="mb-20">
+          <h2 className="text-4xl font-extrabold font-[var(--font-family-heading)] text-fg-primary mb-12 tracking-tighter">
+            ❤️ Favorites
+          </h2>
+          <div className="mb-14">
+            <div className="scroll-section grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
+              {Array.from({ length: 5 }, (_, i) => {
+                const topFavs = getTopSongs(favorites);
+                const song = i < topFavs.length ? topFavs[i] : null;
+                return <CategoryCard key={i} index={i} song={song} contextSongs={favorites} />;
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {user && playlists.length > 0 && (
         <div className="mb-20">
           <h2 className="text-4xl font-extrabold font-[var(--font-family-heading)] text-fg-primary mb-12 tracking-tighter">
@@ -199,34 +225,8 @@ export default function Categories({ songs }: { songs: Song[] }) {
               </div>
             </div>
           ))}
-          </div>
+        </div>
       )}
-
-      {user && favorites.length > 0 && (
-        <div className="mb-20">
-          <h2 className="text-4xl font-extrabold font-[var(--font-family-heading)] text-fg-primary mb-12 tracking-tighter">
-            ❤️ Favorites
-          </h2>
-          <div className="mb-14">
-            <div className="scroll-section grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
-              {Array.from({ length: 5 }, (_, i) => {
-                const topFavs = getTopSongs(favorites);
-                const song = i < topFavs.length ? topFavs[i] : null;
-                return <CategoryCard key={i} index={i} song={song} contextSongs={favorites} />;
-              })}
-            </div>
-          </div>
-          </div>
-      )}
-
-      <div className="mb-16">
-        <h2 className="text-4xl font-extrabold font-[var(--font-family-heading)] text-fg-primary mb-12 tracking-tighter">
-          🎵 Browse by Genre
-        </h2>
-      </div>
-      {genres.map((genre) => (
-        <GenreSection key={genre.name} genre={genre} songs={songs} />
-      ))}
     </section>
   );
 }

@@ -54,6 +54,7 @@ router.get('/', async (req, res) => {
     }
 
     console.log(`[USER] Profile retrieved successfully for: ${row.username} (ID: ${row.id})`);
+    if (row.profile_picture) console.log(` -> Signed URL: ${row.profile_picture}`);
     res.json(row);
 });
 
@@ -80,6 +81,10 @@ router.get('/search', async (req, res) => {
         return row;
     }));
 
+    console.log(`[USER] Search found ${results.length} users for query: "${q}"`);
+    results.forEach(u => {
+        if (u.profile_picture) console.log(` -> User: ${u.username} | PP: ${u.profile_picture}`);
+    });
     res.json(results);
 });
 
@@ -94,27 +99,27 @@ router.put('/', upload.single('profile_picture'), async (req, res) => {
     const { display_name, description } = req.body;
     let profile_picture_path = undefined;
 
+    const { data: current } = await supabase.from('users').select('profile_picture').eq('id', userId).single();
+
     if (req.file) {
         const filename = generatePPName(username, req.file.originalname);
-        profile_picture_path = `profilePic/${filename}`;
+        const storagePath = `profilePic/${filename}`;
+        profile_picture_path = `storage/${storagePath}`;
 
-        console.log(`[USER] Uploading new profile picture to bucket: ${profile_picture_path}`);
+        console.log(`[USER] Uploading new profile picture to bucket: ${storagePath}`);
         const { error: uploadError } = await supabase.storage
             .from(BUCKET_NAME)
-            .upload(profile_picture_path, req.file.buffer, {
+            .upload(storagePath, req.file.buffer, {
                 contentType: req.file.mimetype,
                 upsert: true
             });
 
-        if (uploadError) {
-            console.error(`[USER] Supabase Storage Error: ${uploadError.message}`);
-            return res.status(500).json({ error: "Failed to upload profile picture" });
-        }
+        if (uploadError) return res.status(500).json({ error: "Profile picture upload failed" });
 
         // Cleanup old profile picture if exists
-        const { data: current } = await supabase.from('users').select('profile_picture').eq('id', userId).single();
         if (current?.profile_picture) {
-            await supabase.storage.from(BUCKET_NAME).remove([current.profile_picture]);
+            const cleanPath = current.profile_picture.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
+            await supabase.storage.from(BUCKET_NAME).remove([cleanPath]);
         }
     }
     
@@ -137,7 +142,7 @@ router.put('/', upload.single('profile_picture'), async (req, res) => {
     }
     
     // Return signed URL for the new picture if updated
-    const finalPP = profile_picture_path ? await getSignedURL(profile_picture_path) : undefined;
+    const finalPP = profile_picture_path ? await getSignedURL(profile_picture_path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '')) : undefined;
     
     console.log(`[USER] Successfully updated profile for user: ${username}`);
     res.json({ message: "User updated successfully", profile_picture: finalPP });
@@ -187,18 +192,21 @@ router.post('/register', upload.single('profile_picture'), async (req, res) => {
 
     if (req.file) {
         const filename = generatePPName(username, req.file.originalname);
-        profile_picture_path = `storage/profilePic/${filename}`;
+        const storagePath = `profilePic/${filename}`;
+        profile_picture_path = `storage/${storagePath}`;
         
-        console.log(`[USER] Uploading profile picture for registration: ${profile_picture_path}`);
+        console.log(`[USER] Uploading profile picture for registration: ${storagePath}`);
         const { error: uploadError } = await supabase.storage
             .from(BUCKET_NAME)
-            .upload(profile_picture_path, req.file.buffer, {
-                contentType: req.file.mimetype
+            .upload(storagePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: true
             });
 
         if (uploadError) {
-            console.error(`[USER] Supabase Storage Error during registration: ${uploadError.message}`);
-            return res.status(500).json({ error: "Failed to upload profile picture" });
+            console.error(`[USER] Supabase Error uploading PP for registration: ${uploadError.message}`);
+            // Non-fatal for registration, but let's keep it null
+            profile_picture_path = null;
         }
     }
 
