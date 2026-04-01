@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, type FormEvent, type ChangeEvent } from "r
 import { Link, useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import { API_URL } from "../constants/api";
+import Logo from "./Logo";
 
 /* ── Validators ── */
 function validateUsername(v: string): string | null {
@@ -45,7 +46,7 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const DEFAULT_AVATAR =
   "data:image/svg+xml," +
   encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="#1a1a25"/><circle cx="40" cy="30" r="14" fill="#6a6a80"/><ellipse cx="40" cy="68" rx="24" ry="18" fill="#6a6a80"/></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" rx="40" fill="white"/><circle cx="40" cy="30" r="14" fill="white"/><ellipse cx="40" cy="68" rx="24" ry="18" fill="white"/></svg>'
   );
 
 export default function RegisterPage() {
@@ -241,10 +242,8 @@ export default function RegisterPage() {
       >
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-1">
-          <img 
-            src="/logo.svg" 
-            alt="DART v6.1 Logo" 
-            className="w-9 h-9 object-contain [filter:brightness(0)_invert(1)]" 
+          <Logo 
+            className="w-9 h-9 text-white" 
           />
           <span className="text-xl font-bold font-[var(--font-family-heading)] text-white">
             DART v6.1

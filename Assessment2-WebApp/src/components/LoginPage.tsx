@@ -2,6 +2,7 @@ import { useState, type FormEvent, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
 import { API_URL } from "../constants/api";
+import Logo from "./Logo";
 
 /* ── Validation helpers ── */
 function validateUsername(v: string): string | null {
@@ -110,10 +111,8 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-1">
-          <img 
-            src="/logo.svg" 
-            alt="DART v6.1 Logo" 
-            className="w-9 h-9 object-contain [filter:brightness(0)_invert(1)]" 
+          <Logo 
+            className="w-9 h-9 text-white" 
           />
           <span className="text-xl font-bold font-[var(--font-family-heading)] text-white">
             DART v6.1

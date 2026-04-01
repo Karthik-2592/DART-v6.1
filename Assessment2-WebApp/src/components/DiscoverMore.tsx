@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { type Song, CategoryCard } from "./Categories";
-import { API_URL } from "../constants/api";
+import { usePlayer } from "../context/PlayerContext";
 
 interface Genre {
   name: string;
@@ -45,14 +45,8 @@ function GenreRow({ genre, songs }: { genre: Genre, songs: Song[] }) {
 }
 
 export default function DiscoverMore() {
-  const [songs, setSongs] = useState<Song[]>([]);
-  
-  useEffect(() => {
-    fetch(`${API_URL}/songs`)
-      .then(res => res.json())
-      .then(data => setSongs(data))
-      .catch(err => console.error("Failed to fetch songs:", err));
-  }, []);
+  const { contextSongs } = usePlayer();
+  const songs = contextSongs || [];
 
   // Pick 3 random genres to show
   const genresToShow = useMemo(() => {

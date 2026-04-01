@@ -7,6 +7,7 @@ import { getMediaUrl } from "../utils/mediaUtils";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { API_URL } from "../constants/api";
+import { usePlayer } from "../context/PlayerContext";
 
 type Tab = "profile" | "uploads" | "playlists" | "accounts";
 
@@ -93,7 +94,8 @@ export default function ProfilePage() {
 
   const [deletePass, setDeletePass] = useState("");
   const [playlistSearch, setPlaylistSearch] = useState("");
-  const [allSongs, setAllSongs] = useState<Song[]>([]);
+  const { contextSongs: allSongsFromContext } = usePlayer();
+  const allSongs = allSongsFromContext || [];
   const [uploadedSongs, setUploadedSongs] = useState<Song[]>([]);
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [allFollowers, setAllFollowers] = useState<any[]>([]);
@@ -154,9 +156,8 @@ export default function ProfilePage() {
 
     const fetchProfileData = async () => {
       try {
-        const [profileRes, songsRes, uploadsRes, playlistsRes, followersRes, followingRes] = await Promise.all([
+        const [profileRes, uploadsRes, playlistsRes, followersRes, followingRes] = await Promise.all([
           fetch(`${API_URL}/users?username=${targetUser.username}`).then(r => r.json()),
-          fetch(`${API_URL}/songs`).then(r => r.json()),
           fetch(`${API_URL}/contributors/contributions?username=${targetUser.username}`).then(r => r.json()),
           fetch(`${API_URL}/playlists/user/${targetUser.username}`).then(r => r.json()),
           fetch(`${API_URL}/users/${targetUser.username}/followers`).then(r => r.json()),
@@ -164,7 +165,6 @@ export default function ProfilePage() {
         ]);
 
         if (profileRes && !profileRes.error) setTargetUser(profileRes);
-        setAllSongs(songsRes || []);
         setUploadedSongs(uploadsRes || []);
         setPlaylists(playlistsRes || []);
         setAllFollowers(followersRes || []);

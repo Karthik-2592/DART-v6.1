@@ -2,11 +2,10 @@ import {  useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { type Song } from "./Categories";
 import { usePlayer } from "../context/PlayerContext";
 import { API_URL } from "../constants/api";
 
-import Navbar from "./Navbar";
+import Navbar from "./Navbar";    
 import Visualizer from "./Visualizer";
 import PlaylistQueue from "./PlaylistQueue";
 import TrackDetails from "./TrackDetails";
@@ -19,17 +18,16 @@ gsap.registerPlugin(ScrollTrigger);
 export default function MusicPlayer() {
   const { songId } = useParams();
   const location = useLocation();
-  const { currentSong, setCurrentSong, setContextSongs, setIsMiniPlayerOpen, lastPlayedSongIdRef, audioRef } = usePlayer();
-  const contextSongs = location.state?.contextSongs as Song[] | undefined;
+  const { currentSong, setCurrentSong, setContextSongs, contextSongs, setIsMiniPlayerOpen, lastPlayedSongIdRef, audioRef } = usePlayer();
 
   useEffect(() => {
     setIsMiniPlayerOpen(false);
   }, [setIsMiniPlayerOpen]);
 
   useEffect(() => {
-    // Sync context songs on load if provided
-    if (contextSongs) {
-      setContextSongs(contextSongs);
+    // Sync context songs from state if provided (e.g. from a specific category or playlist)
+    if (location.state?.contextSongs) {
+      setContextSongs(location.state.contextSongs);
     }
     
     // If we have a song in state and it matches the URL ID, use it

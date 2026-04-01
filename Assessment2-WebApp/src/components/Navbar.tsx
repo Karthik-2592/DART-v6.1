@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import gsap from "gsap";
 import { getMediaUrl } from "../utils/mediaUtils";
+import Logo from "./Logo";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -60,10 +61,8 @@ export default function Navbar() {
     <nav className="hide-on-enter fixed top-0 left-0 w-full z-50 flex items-center justify-between px-12 py-1 bg-white/5 backdrop-blur-md border-b border-white/10">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 no-underline group">
-        <img 
-          src="/logo.svg" 
-          alt="DART v6.1 Logo" 
-          className="w-10 h-10 object-contain transition-all group-hover:scale-110 [filter:brightness(0)_invert(1)]"
+        <Logo 
+          className="w-10 h-10 text-white transition-all group-hover:scale-110" 
         />
         <span className="text-xl font-bold font-[var(--font-family-heading)] text-white group-hover:text-accent-light transition-colors">
           DART v6.1

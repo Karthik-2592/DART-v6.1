@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGenreTheme } from "../utils/genreTheme";
 import { type Song } from "./Categories";
 import { getMediaUrl } from "../utils/mediaUtils";
-import { API_URL } from "../constants/api";
+import { usePlayer } from "../context/PlayerContext";
 
 export default function PlaylistQueue({ contextSongs: contextSongsProp }: { contextSongs?: Song[] }) {
-  const [songs, setSongs] = useState<Song[]>([]);
+  const { contextSongs: globalSongs } = usePlayer();
   const [startIndex, setStartIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const { songId } = useParams();
@@ -14,15 +14,9 @@ export default function PlaylistQueue({ contextSongs: contextSongsProp }: { cont
   const navigate = useNavigate();
   
   const currentSong = location.state?.song as Song | undefined;
+  const songs = globalSongs || [];
   const contextSongs = contextSongsProp || location.state?.contextSongs as Song[] | undefined;
   const activeId = songId ? parseInt(songId) : currentSong?.id;
-
-  useEffect(() => {
-    fetch(`${API_URL}/songs`)
-      .then(res => res.json())
-      .then(data => setSongs(data))
-      .catch(err => console.error("Failed to fetch songs:", err));
-  }, []);
 
   const queueSongs = useMemo(() => {
     // If contextSongs provided (from a playlist), use them primarily

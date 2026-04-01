@@ -138,11 +138,11 @@ export default function MiniPlayer() {
               className="no-drag w-10 h-10 shrink-0 rounded-full bg-accent hover:bg-accent-hover flex items-center justify-center text-white shadow-lg cursor-pointer transition-transform hover:scale-105"
             >
               {localIsPlaying ? (
-                <svg className="w-5 h-5 flex items-center justify-center" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 flex items-center justify-center" fill="white" viewBox="0 0 24 24">
                   <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               )}

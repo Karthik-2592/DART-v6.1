@@ -1,17 +1,19 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./App.css";
 
+import { usePlayer } from "./context/PlayerContext";
+
 import { API_URL } from "./constants/api";
 import Navbar from "./components/Navbar";
 import Carousel from "./components/Carousel";
 import SearchBar from "./components/SearchBar";
-import Categories, { type Song } from "./components/Categories";
+import Categories from "./components/Categories";
 import CallToAction from "./components/CallToAction";
 import Footer from "./components/Footer";
-import Placeholder from "./components/Placeholder";
+import AboutUs from "./components/AboutUs";
 import MusicPlayer from "./components/MusicPlayer";
 import LoginPage from "./components/LoginPage";
 import RegisterPage from "./components/RegisterPage";
@@ -22,14 +24,8 @@ import MiniPlayer from "./components/MiniPlayer";
 gsap.registerPlugin(ScrollTrigger);
 
 function LandingPage() {
-  const [songs, setSongs] = useState<Song[]>([]);
-
-  useEffect(() => {
-    fetch(`${API_URL}/songs`)
-      .then(res => res.json())
-      .then(data => setSongs(data || []))
-      .catch(err => console.error("LandingPage fetch error:", err));
-  }, []);
+  const { contextSongs } = usePlayer();
+  const songs = contextSongs || [];
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -81,8 +77,19 @@ function LandingPage() {
     </>
   );
 }
-function App() {
 
+function App() {
+  const { setContextSongs, contextSongs } = usePlayer();
+
+  useEffect(() => {
+    // Only fetch if songs are not already loaded
+    if (!contextSongs || contextSongs.length === 0) {
+      fetch(`${API_URL}/songs`)
+        .then(res => res.json())
+        .then(data => setContextSongs(data || []))
+        .catch(err => console.error("App fetch error:", err));
+    }
+  }, [setContextSongs, contextSongs]);
 
   return (
     <BrowserRouter>
@@ -93,8 +100,9 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/support" element={<SupportPage />} />
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/profile/:username?" element={<ProfilePage />} />
-        <Route path="*" element={<Placeholder />} />
+        <Route path="*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>
   );
