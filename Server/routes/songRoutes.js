@@ -90,7 +90,7 @@ router.get('/', async (req, res) => {
     console.log(`[SONG] Listing tracks...`);
     const { data: rows, error } = await query;
     if (error) return res.status(500).json({ error: error.message });
-    
+
     res.json(await formatSongRows(rows));
 });
 
@@ -122,7 +122,7 @@ router.get('/:id', async (req, res) => {
 
     if (error) return res.status(500).json({ error: error.message });
     if (!row) return res.status(404).json({ error: "Song not found" });
-    
+
     const formatted = await formatSongRows([row]);
     res.json(formatted[0]);
 });
@@ -130,7 +130,7 @@ router.get('/:id', async (req, res) => {
 // POST /songs (Upload Track)
 router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio', maxCount: 1 }]), async (req, res) => {
     const { title, genre, release_year, artists } = req.body;
-    
+
     if (!req.files['audio']) return res.status(400).json({ error: "Audio file is required" });
     if (!title || title.length > 128) return res.status(400).json({ error: "Valid title required" });
 
@@ -145,13 +145,13 @@ router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio',
     if (!unique) return res.status(409).json({ error: "Song already exists." });
 
     console.log(`[SONG] Uploading files for: ${title}`);
-    
+
     // Upload Cover
     let cover_path = null;
     if (req.files['cover']) {
         const coverFile = req.files['cover'][0];
         const coverName = generateFileName(title, 'cover', coverFile.originalname);
-        cover_path = `cover/${coverName}`;
+        cover_path = `storage/cover/${coverName}`;
         const { error: coverErr } = await supabase.storage.from(BUCKET_NAME).upload(cover_path, coverFile.buffer, { contentType: coverFile.mimetype });
         if (coverErr) return res.status(500).json({ error: "Cover upload failed" });
     }
@@ -159,7 +159,7 @@ router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio',
     // Upload Audio
     const audioFile = req.files['audio'][0];
     const audioName = generateFileName(title, 'audio', audioFile.originalname);
-    const audio_path = `audio/${audioName}`;
+    const audio_path = `storage/audio/${audioName}`;
     const { error: audioErr } = await supabase.storage.from(BUCKET_NAME).upload(audio_path, audioFile.buffer, { contentType: audioFile.mimetype });
     if (audioErr) {
         if (cover_path) await supabase.storage.from(BUCKET_NAME).remove([cover_path]);

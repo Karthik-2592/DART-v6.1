@@ -187,7 +187,7 @@ router.post('/register', upload.single('profile_picture'), async (req, res) => {
 
     if (req.file) {
         const filename = generatePPName(username, req.file.originalname);
-        profile_picture_path = `profilePic/${filename}`;
+        profile_picture_path = `storage/profilePic/${filename}`;
         
         console.log(`[USER] Uploading profile picture for registration: ${profile_picture_path}`);
         const { error: uploadError } = await supabase.storage
