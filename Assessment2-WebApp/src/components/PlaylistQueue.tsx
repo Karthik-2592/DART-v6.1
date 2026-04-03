@@ -6,27 +6,26 @@ import { getMediaUrl } from "../utils/mediaUtils";
 import { usePlayer } from "../context/PlayerContext";
 
 export default function PlaylistQueue({ contextSongs: contextSongsProp }: { contextSongs?: Song[] }) {
-  const { contextSongs: globalSongs } = usePlayer();
+  const { contextSongs: globalSongs, allSongs } = usePlayer();
   const [startIndex, setStartIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const { songId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const currentSong = location.state?.song as Song | undefined;
-  const songs = globalSongs || [];
+  const songs = globalSongs && globalSongs.length > 0 ? globalSongs : (allSongs || []);
   const contextSongs = contextSongsProp || location.state?.contextSongs as Song[] | undefined;
   const activeId = songId ? parseInt(songId) : currentSong?.id;
 
   const queueSongs = useMemo(() => {
-    // If contextSongs provided (from a playlist), use them primarily
+    // If contextSongs provided (from a specific playlist/search/category), use them primarily
     if (contextSongs && contextSongs.length > 0) {
       return contextSongs.filter(s => s.id !== activeId).slice(0, 10);
     }
-
     if (songs.length === 0) return [];
-    
-    // Prioritize songs of the same genre as current song, then others
+
+    // Prioritize songs of the same genre as current song, then others from the library
     let filtered = songs;
     if (activeId) {
       const activeSong = songs.find(s => s.id === activeId) || currentSong;
@@ -34,9 +33,9 @@ export default function PlaylistQueue({ contextSongs: contextSongsProp }: { cont
       const others = songs.filter(s => activeSong && s.genre !== activeSong.genre && s.id !== activeId);
       filtered = [...sameGenre, ...others];
     }
-    
+
     return filtered.slice(0, 10); // Show top 10 as queue
-  }, [songs, currentSong, contextSongs]);
+  }, [songs, currentSong, contextSongs, activeId]);
 
   const handleDotClick = useCallback(
     (index: number) => {
@@ -117,10 +116,10 @@ export default function PlaylistQueue({ contextSongs: contextSongsProp }: { cont
                     {/* Left: 1:1 Image */}
                     <div className="shrink-0 h-full aspect-square bg-[#242435] rounded-l-[4px] border-r border-border flex flex-col items-center justify-center overflow-hidden">
                       {card.cover_path ? (
-                        <img 
-                          src={getMediaUrl(card.cover_path, 'cover')} 
-                          alt={card.title} 
-                          className="w-full h-full object-cover pointer-events-none" 
+                        <img
+                          src={getMediaUrl(card.cover_path, 'cover')}
+                          alt={card.title}
+                          className="w-full h-full object-cover pointer-events-none"
                         />
                       ) : (
                         <svg className="w-8 h-8 text-fg-muted/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
@@ -161,11 +160,10 @@ export default function PlaylistQueue({ contextSongs: contextSongsProp }: { cont
             <button
               key={i}
               onClick={() => handleDotClick(i)}
-              className={`rounded-full transition-all duration-300 cursor-pointer border-none ${
-                i === startIndex
+              className={`rounded-full transition-all duration-300 cursor-pointer border-none ${i === startIndex
                   ? "w-6 h-2.5 bg-accent"
                   : "w-2.5 h-2.5 bg-fg-muted/30 hover:bg-fg-muted"
-              }`}
+                }`}
             />
           ))}
         </div>

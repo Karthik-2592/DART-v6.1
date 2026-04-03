@@ -1,6 +1,7 @@
 import express from 'express';
 import supabase from '../supabaseClient.js';
 import { resolveUser } from '../resolvers.js';
+import { formatUserRows } from '../utils/formatters.js';
 
 const router = express.Router();
 
@@ -118,8 +119,10 @@ router.get('/:username/followers', async (req, res) => {
     }
     
     const flatRows = rows.map(r => r.users).filter(Boolean);
-    console.log(`[FOLLOW] User ${req.params.username} has ${flatRows.length} followers.`);
-    res.json(flatRows);
+    const formatted = await formatUserRows(flatRows);
+    
+    console.log(`[FOLLOW] User ${req.params.username} has ${formatted.length} followers.`);
+    res.json(formatted);
 });
 
 // GET /users/:username/following - List following by username
@@ -147,8 +150,10 @@ router.get('/:username/following', async (req, res) => {
     }
     
     const flatRows = rows.map(r => r.users).filter(Boolean);
-    console.log(`[FOLLOW] User ${req.params.username} is following ${flatRows.length} users.`);
-    res.json(flatRows);
+    const formatted = await formatUserRows(flatRows);
+    
+    console.log(`[FOLLOW] User ${req.params.username} is following ${formatted.length} users.`);
+    res.json(formatted);
 });
 
 export default router;

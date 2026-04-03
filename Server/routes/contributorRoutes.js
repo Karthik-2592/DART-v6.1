@@ -2,7 +2,7 @@ import express from 'express';
 import supabase from '../supabaseClient.js';
 import { resolveUser, resolveSong } from '../resolvers.js';
 
-import { formatSongRows } from '../utils/formatters.js';
+import { formatSongRows, formatUserRows } from '../utils/formatters.js';
 
 const router = express.Router();
 
@@ -67,8 +67,10 @@ router.get('/contributors', async (req, res) => {
     }
 
     const flatRows = rows.map(r => r.users).filter(Boolean);
-    console.log(`[CONTRIBUTOR] Found ${flatRows.length} contributor(s) for "${title}".`);
-    res.json(flatRows);
+    const formatted = await formatUserRows(flatRows);
+    
+    console.log(`[CONTRIBUTOR] Found ${formatted.length} contributor(s) for "${title}".`);
+    res.json(formatted);
 });
 
 // GET /contributions - List songs contributed by a user by username

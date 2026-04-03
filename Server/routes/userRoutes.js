@@ -1,8 +1,9 @@
 import express from 'express';
 import multer from 'multer';
-import supabase, { BUCKET_NAME, getSignedURL } from '../supabaseClient.js';
+import supabase, { BUCKET_NAME } from '../supabaseClient.js';
 import { resolveUser } from '../resolvers.js';
 import { deleteUser } from '../utils/deletionRoutines.js';
+import { formatUserRows } from '../utils/formatters.js';
 
 // Configure multer memory storage
 const upload = multer({ storage: multer.memoryStorage() });
@@ -48,14 +49,11 @@ router.get('/', async (req, res) => {
         return res.status(404).json({ error: "User not found" });
     }
 
-    // Generate signed URL if profile_picture exists
-    if (row.profile_picture) {
-        row.profile_picture = await getSignedURL(row.profile_picture);
-    }
-
-    console.log(`[USER] Profile retrieved successfully for: ${row.username} (ID: ${row.id})`);
-    if (row.profile_picture) console.log(` -> Signed URL: ${row.profile_picture}`);
-    res.json(row);
+    const [formattedUser] = await formatUserRows([row]);
+    
+    console.log(`[USER] Profile retrieved successfully for: ${formattedUser.username} (ID: ${formattedUser.id})`);
+    if (formattedUser.profile_picture) console.log(` -> Signed URL: ${formattedUser.profile_picture}`);
+    res.json(formattedUser);
 });
 
 // GET /users/search?q=:query
@@ -74,13 +72,8 @@ router.get('/search', async (req, res) => {
     }
 
     // Generate signed URLs for all results
-    const results = await Promise.all(rows.map(async (row) => {
-        if (row.profile_picture) {
-            row.profile_picture = await getSignedURL(row.profile_picture);
-        }
-        return row;
-    }));
-
+    const results = await formatUserRows(rows);
+    
     console.log(`[USER] Search found ${results.length} users for query: "${q}"`);
     results.forEach(u => {
         if (u.profile_picture) console.log(` -> User: ${u.username} | PP: ${u.profile_picture}`);
@@ -142,7 +135,8 @@ router.put('/', upload.single('profile_picture'), async (req, res) => {
     }
     
     // Return signed URL for the new picture if updated
-    const finalPP = profile_picture_path ? await getSignedURL(profile_picture_path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '')) : undefined;
+    const [formattedResult] = await formatUserRows([{ profile_picture: profile_picture_path }]);
+    const finalPP = formattedResult?.profile_picture;
     
     console.log(`[USER] Successfully updated profile for user: ${username}`);
     res.json({ message: "User updated successfully", profile_picture: finalPP });
@@ -243,7 +237,8 @@ router.post('/register', upload.single('profile_picture'), async (req, res) => {
     console.log(`[USER] New account created! Username: ${username}, ID: ${data.id}`);
     
     // Signed URL for response
-    const finalPP = profile_picture_path ? await getSignedURL(profile_picture_path) : null;
+    const [formattedReg] = await formatUserRows([{ profile_picture: profile_picture_path }]);
+    const finalPP = formattedReg?.profile_picture;
 
     res.status(201).json({ 
         id: data.id, 
@@ -278,13 +273,11 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate signed URL for login response
-    if (user.profile_picture) {
-        user.profile_picture = await getSignedURL(user.profile_picture);
-    }
+    const [formattedLogin] = await formatUserRows([user]);
     
-    console.log(`[USER] Successful login: ${username} (ID: ${user.id})`);
+    console.log(`[USER] Successful login: ${formattedLogin.username} (ID: ${formattedLogin.id})`);
     
-    const { password: _, display_name, ...userData } = user;
+    const { password: _, display_name, ...userData } = formattedLogin;
     res.json({ ...userData, displayName: display_name });
 });
 

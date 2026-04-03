@@ -28,3 +28,37 @@ export async function formatSongRows(rows) {
         };
     })).then(results => results.filter(Boolean));
 }
+
+/**
+ * Common formatter for user records to generate signed URLs for profile pictures.
+ */
+export async function formatUserRows(rows) {
+    if (!rows) return [];
+    return Promise.all(rows.map(async (row) => {
+        if (!row) return null;
+        if (row.profile_picture) {
+            // Remove storage prefix before signing
+            const cleanPath = row.profile_picture.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
+            row.profile_picture = await getSignedURL(cleanPath);
+        }
+        
+        return row;
+    })).then(results => results.filter(Boolean));
+}
+
+/**
+ * Common formatter for comment records to generate signed URLs for user profiles.
+ */
+export async function formatCommentRows(rows) {
+    if (!rows) return [];
+    return Promise.all(rows.map(async (row) => {
+        if (!row || !row.users) return row;
+
+        const [formattedUser] = await formatUserRows([row.users]);
+        row.users = formattedUser;
+
+        return row;
+    }));
+}
+
+

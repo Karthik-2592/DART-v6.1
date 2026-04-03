@@ -1,5 +1,6 @@
 import express from 'express';
 import supabase from '../supabaseClient.js';
+import { formatCommentRows } from '../utils/formatters.js';
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
     
+    console.log(`[COMMENT] comment created successfully with ID: ${data.id}`);
     res.status(201).json({ message: "Comment created successfully", id: data.id });
 });
 
@@ -55,8 +57,12 @@ router.get('/song/:songId', async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
     
-    const formatted = rows.map(r => {
+    // Generate signed URLs for user profile pictures
+    const rowsWithSignedURLs = await formatCommentRows(rows);
+    
+    const formatted = rowsWithSignedURLs.map((r) => {
         const { users, ...commentData } = r;
+    
         return {
             ...commentData,
             username: users?.username,
@@ -65,6 +71,7 @@ router.get('/song/:songId', async (req, res) => {
         };
     });
     
+    console.log(`[COMMENT] fetched ${formatted.length} comments for song ${songId}`);
     res.json(formatted);
 });
 
@@ -99,6 +106,7 @@ router.get('/user/:userId', async (req, res) => {
         };
     });
     
+    console.log(`[COMMENT] fetched ${formatted.length} comments authored by user ${userId}`);
     res.json(formatted);
 });
 
@@ -127,6 +135,7 @@ router.post('/:id/like', async (req, res) => {
         return res.status(500).json({ error: updateError.message });
     }
         
+    console.log(`[COMMENT] comment ${id} liked successfully. New count: ${new_count}`);
     res.json({ message: "Comment liked successfully" });
 });
 
@@ -145,6 +154,7 @@ router.delete('/:id', async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 
+    console.log(`[COMMENT] comment ${id} deleted successfully`);
     res.json({ message: "Comment deleted successfully" });
 });
 

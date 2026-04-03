@@ -328,11 +328,15 @@ export default function PlaybackControls({}: PlaybackControlsProps) {
             >
               <div
                 ref={progressBarRef}
-                className="absolute top-0 left-0 h-full bg-accent rounded-full transition-all duration-200 min-w-[6px]"
+                className={`absolute top-0 left-0 h-full bg-accent rounded-full min-w-[6px] ${
+                  !isDragging && !isEntering ? "transition-all duration-200" : ""
+                }`}
                 style={{ width: isEntering ? "0%" : `${progressPercent}%` }}
               />
               <div
-                className={`hide-on-enter absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-accent rounded-full shadow-lg transition-all duration-200 ${
+                className={`hide-on-enter absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-accent rounded-full shadow-lg ${
+                  !isDragging && !isEntering ? "transition-all duration-200" : ""
+                } ${
                   isHoveringPlayer || isDragging ? "scale-x-150 opacity-100" : "opacity-0"
                 }`}
                 style={{ left: `${progressPercent}%`, marginLeft: "-6px" }}
