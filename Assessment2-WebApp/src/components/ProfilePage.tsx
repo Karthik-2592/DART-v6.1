@@ -257,17 +257,58 @@ export default function ProfilePage() {
     }
 
     if (isSubmitting) return;
-
-    const formData = new FormData();
-    formData.append("title", songForm.title);
-    formData.append("genre", songForm.genre);
-    formData.append("release_year", songForm.releaseYear);
-    formData.append("artists", songForm.artists);
-    if (songForm.coverFile) formData.append("cover", songForm.coverFile);
-    if (songForm.audioFile) formData.append("audio", songForm.audioFile);
-
     setIsSubmitting(true);
+
     try {
+      let audioPath = null;
+      let usedSignedUpload = false;
+
+      // 1. Attempt Signed Upload for Audio (if new file provided)
+      if (songForm.audioFile) {
+        try {
+          console.log("[UPLOAD] Requesting signed URL...");
+          const signedRes = await fetch(`${API_URL}/songs/signed-url`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: songForm.title, filename: songForm.audioFile.name })
+          });
+
+          if (signedRes.ok) {
+            const { signedUrl, path } = await signedRes.json();
+            console.log("[UPLOAD] Uploading directly to Supabase...");
+            const uploadRes = await fetch(signedUrl, {
+              method: "PUT",
+              body: songForm.audioFile,
+              headers: { "Content-Type": songForm.audioFile.type }
+            });
+
+            if (uploadRes.ok) {
+              audioPath = path;
+              usedSignedUpload = true;
+              console.log("[UPLOAD] Signed upload successful.");
+            } else {
+              console.warn("[UPLOAD] Signed upload failed, falling back to multipart.");
+            }
+          }
+        } catch (err) {
+          console.error("[UPLOAD] Signed upload error:", err);
+        }
+      }
+
+      // 2. Prepare Final Submission
+      const formData = new FormData();
+      formData.append("title", songForm.title);
+      formData.append("genre", songForm.genre);
+      formData.append("release_year", songForm.releaseYear);
+      formData.append("artists", songForm.artists);
+      if (songForm.coverFile) formData.append("cover", songForm.coverFile);
+
+      if (usedSignedUpload) {
+        formData.append("audio_path", audioPath);
+      } else if (songForm.audioFile) {
+        formData.append("audio", songForm.audioFile);
+      }
+
       const url = isEdit ? `${API_URL}/songs?id=${songId}` : `${API_URL}/songs`;
       const response = await fetch(url, {
         method: isEdit ? "PUT" : "POST",

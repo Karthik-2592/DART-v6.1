@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import supabase, { BUCKET_NAME, getSignedURL } from '../supabaseClient.js';
+import supabase, { BUCKET_NAME, getSignedURL, createSignedUploadURL } from '../supabaseClient.js';
 import { resolveSong } from '../resolvers.js';
 import { deleteSong } from '../utils/deletionRoutines.js';
 import { formatSongRows } from '../utils/formatters.js';
@@ -132,14 +132,37 @@ router.get('/:id', async (req, res) => {
     res.json(track);
 });
 
+// GET /songs/signed-url (NEW: Request signed upload URL)
+router.post('/signed-url', async (req, res) => {
+    const { title, filename } = req.body;
+    if (!title || !filename) {
+        return res.status(400).json({ error: "Title and filename are required" });
+    }
+
+    const audioName = generateFileName(title, 'audio', filename);
+    const audioStoragePath = `audio/${audioName}`;
+    
+    const uploadData = await createSignedUploadURL(audioStoragePath);
+    
+    if (!uploadData) {
+        return res.status(500).json({ error: "Failed to create signed upload URL" });
+    }
+
+    res.json({
+        signedUrl: uploadData.signedUrl,
+        path: audioStoragePath, // This is what the frontend will send back in POST /
+        token: uploadData.token
+    });
+});
+
 // POST /songs (Upload Track)
 router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio', maxCount: 1 }]), async (req, res) => {
     console.log(`[SONG] POST Request body:`, req.body);
-    const { title, genre, release_year, artists} = req.body;
+    const { title, genre, release_year, artists, audio_path: preUploadedAudioPath } = req.body;
 
-    if (!req.files || !req.files['audio']) {
-        console.warn(`[SONG] Upload rejected: Missing audio file.`);
-        return res.status(400).json({ error: "Audio file is required" });
+    if (!preUploadedAudioPath && (!req.files || !req.files['audio'])) {
+        console.warn(`[SONG] Upload rejected: Missing audio file or pre-uploaded path.`);
+        return res.status(400).json({ error: "Audio file or path is required" });
     }
     if (!title || title.trim().length === 0 || title.length > 128) {
         console.warn(`[SONG] Upload rejected: Invalid title "${title}".`);
@@ -170,19 +193,23 @@ router.post('/', upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'audio',
         if (coverErr) return res.status(500).json({ error: "Cover upload failed" });
     }
 
-    // Upload Audio
-    const audioFile = req.files['audio'][0];
-    const audioName = generateFileName(title, 'audio', audioFile.originalname);
-    const audioStoragePath = `audio/${audioName}`;
-    const audio_path = `storage/${audioStoragePath}`;
+    // Upload Audio (only if not pre-uploaded)
+    let audio_path = preUploadedAudioPath ? `storage/${preUploadedAudioPath}` : null;
     
-    const { error: audioErr } = await supabase.storage.from(BUCKET_NAME).upload(audioStoragePath, audioFile.buffer, { contentType: audioFile.mimetype });
-    if (audioErr) {
-        if (cover_path) {
-            const cleanCover = cover_path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
-            await supabase.storage.from(BUCKET_NAME).remove([cleanCover]);
+    if (!preUploadedAudioPath) {
+        const audioFile = req.files['audio'][0];
+        const audioName = generateFileName(title, 'audio', audioFile.originalname);
+        const audioStoragePath = `audio/${audioName}`;
+        audio_path = `storage/${audioStoragePath}`;
+        
+        const { error: audioErr } = await supabase.storage.from(BUCKET_NAME).upload(audioStoragePath, audioFile.buffer, { contentType: audioFile.mimetype });
+        if (audioErr) {
+            if (cover_path) {
+                const cleanCover = cover_path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
+                await supabase.storage.from(BUCKET_NAME).remove([cleanCover]);
+            }
+            return res.status(500).json({ error: "Audio upload failed" });
         }
-        return res.status(500).json({ error: "Audio upload failed" });
     }
 
     // Insert Song Record

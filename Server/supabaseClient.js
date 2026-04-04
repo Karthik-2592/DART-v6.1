@@ -28,4 +28,24 @@ export const getSignedURL = async (path, expiry = 21600) => {
     return data.signedUrl;
 };
 
+/**
+ * Creates a signed upload URL for a given path.
+ */
+export const createSignedUploadURL = async (path, expiry = 3600) => {
+    if (!path) return null;
+
+    let cleanPath = path.replace(/^(storage\/|Storage\/)/i, '').replace(/^\/+/, '');
+
+    const { data, error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .createSignedUploadUrl(cleanPath, { expiresIn: expiry });
+
+    if (error) {
+        console.error(`[STORAGE] Error creating signed upload URL for ${cleanPath}:`, error.message);
+        return null;
+    }
+
+    return data;
+};
+
 export default supabase;
