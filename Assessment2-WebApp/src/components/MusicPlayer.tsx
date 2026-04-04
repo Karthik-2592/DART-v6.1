@@ -1,7 +1,6 @@
 import {  useEffect } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { usePlayer } from "../context/PlayerContext";
 import { API_URL } from "../constants/api";
 
@@ -13,7 +12,6 @@ import DiscoverMore from "./DiscoverMore";
 import Comments from "./Comments";
 import Footer from "./Footer";
 
-gsap.registerPlugin(ScrollTrigger);
 
 export default function MusicPlayer() {
   const { songId } = useParams();
@@ -62,27 +60,6 @@ export default function MusicPlayer() {
       document.body.classList.add("has-entered");
     }
 
-    // Existing scroll-driven brightness animations
-    const sections = document.querySelectorAll(".scroll-section");
-
-    sections.forEach((section) => {
-      gsap.fromTo(
-        section,
-        { opacity: 0.55, filter: "brightness(0.8)" },
-        {
-          opacity: 1,
-          filter: "brightness(1.05)",
-          duration: "0.1",
-          scrollTrigger: {
-            trigger: section,
-            start: "top 85%",
-            end: "bottom 15%",
-            scrub: 1,
-          },
-        }
-      );
-    });
-
     // --- New: Fullscreen + Viewport Top Auto-Hide Logic ---
     let hideTimer: ReturnType<typeof setTimeout> | null = null;
     let isHidden = false;
@@ -129,7 +106,6 @@ export default function MusicPlayer() {
     checkConditions();
 
     return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
       window.removeEventListener("scroll", checkConditions);
       document.removeEventListener("fullscreenchange", checkConditions);
       if (hideTimer) clearTimeout(hideTimer);

@@ -6,6 +6,7 @@ import { usePlayer } from "../context/PlayerContext";
 // ── Constants ──
 const NUM_BARS = 72;
 const UPDATE_INTERVAL_MS = 50;
+const IS_FIREFOX = typeof window !== "undefined" && /firefox/i.test(navigator.userAgent);
 
 // ── Normalization tuning ──
 const DECAY_RATE = 0.997;       // running-max decay per frame (~3 s half-life @ 60 fps)
@@ -15,8 +16,8 @@ const LOCAL_WEIGHT = 0.8;      // blend: local Gaussian-zone vs global running-m
 const GLOBAL_WEIGHT = 1 - LOCAL_WEIGHT;
 
 // ── Smoothing tuning ──
-const RISE_FACTOR = 0.14;       // bars grow quickly
-const FALL_FACTOR = 0.04;       // bars fall slowly
+const RISE_FACTOR = 0.2;
+const FALL_FACTOR = 0.06;
 const MAX_DELTA = 8;            // max change per frame (% of canvas)
 
 // ── Peak detection tuning ──
@@ -135,7 +136,6 @@ export default function Visualizer({ song }: { song?: Song }) {
   useEffect(() => {
     const renderLoop = (timestamp: number) => {
       rafRef.current = requestAnimationFrame(renderLoop);
-
       const canvas = canvasRef.current;
       const glowCanvas = glowCanvasRef.current;
       const analyser = analyserRef.current;
@@ -231,7 +231,7 @@ export default function Visualizer({ song }: { song?: Song }) {
 
       // ── 2. Canvas Drawing ──
       ctx.clearRect(0, 0, width, height);
-      glowCtx.clearRect(0, 0, width, height);
+      if (!IS_FIREFOX) glowCtx.clearRect(0, 0, width, height);
 
       const targets = targetHeightsRef.current;
       const currents = currentHeightsRef.current;
@@ -254,7 +254,7 @@ export default function Visualizer({ song }: { song?: Song }) {
 
       // Set fill once for both contexts
       ctx.fillStyle = fillColor;
-      glowCtx.fillStyle = fillColor;
+      if (!IS_FIREFOX) glowCtx.fillStyle = fillColor;
 
       let x = 0;
       for (let i = 0; i < NUM_BARS; i++) {
@@ -269,7 +269,7 @@ export default function Visualizer({ song }: { song?: Song }) {
         const y = height - barPx;
 
         // Glow + crisp in single pass
-        glowCtx.fillRect(x, y, barWidth, barPx);
+        if (!IS_FIREFOX) glowCtx.fillRect(x, y, barWidth, barPx);
         ctx.fillRect(x, y, barWidth, barPx);
 
         x += barWidth + barGap;
@@ -288,7 +288,7 @@ export default function Visualizer({ song }: { song?: Song }) {
         style={{ height: "900px" }}
       >
         {/* Visualizer Canvas Container */}
-        <div className="flex-1 w-full px-9 pt-12 pb-10 relative flex justify-center items-end">
+        <div className="flex-1 w-full h-full px-9 pt-12 pb-10 relative flex justify-center items-end">
           <canvas
             ref={glowCanvasRef}
             className="absolute inset-0 w-full h-full block z-0 pointer-events-none"

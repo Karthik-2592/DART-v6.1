@@ -1,7 +1,5 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./App.css";
 
 import { usePlayer } from "./context/PlayerContext";
@@ -21,48 +19,10 @@ import SupportPage from "./components/SupportPage";
 import ProfilePage from "./components/ProfilePage";
 import MiniPlayer from "./components/MiniPlayer";
 
-gsap.registerPlugin(ScrollTrigger);
-
 function LandingPage() {
   const { allSongs } = usePlayer();
   const songs = allSongs || [];
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const initScrollTriggers = () => {
-        const sections = document.querySelectorAll(".scroll-section");
-        sections.forEach((section) => {
-          gsap.fromTo(
-            section,
-            { opacity: 0.85, filter: "brightness(0.9)" },
-            {
-              opacity: 1,
-              filter: "brightness(1.15)",
-              duration: "0.1",
-              scrollTrigger: {
-                trigger: section,
-                start: "top 85%",
-                end: "bottom 15%",
-                scrub: 1,
-                invalidateOnRefresh: true,
-              },
-            }
-          );
-        });
-      };
-
-      initScrollTriggers();
-
-      // Refresh ScrollTrigger after a short delay to account for data-driven component mounting
-      const timer = setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 500);
-
-      return () => clearTimeout(timer);
-    });
-
-    return () => ctx.revert();
-  }, [songs]); // Refresh triggers when songs are loaded
 
   return (
     <>

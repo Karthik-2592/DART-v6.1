@@ -170,6 +170,7 @@ body.has-entered .hide-on-enter {
 
 /* ── Carousel 3D tilt ── */
 .carousel-card {
+  will-change: transform;
   transform-style: preserve-3d;
   transition: transform 0.1s ease-out;
 }
@@ -371,7 +372,7 @@ body.has-entered .hide-on-enter {
 }
 .volume-slider::-webkit-slider-thumb:hover {
   transform: scale(1.3);
-  box-shadow: 0 0 10px rgba(233, 30, 140, 0.5);
+  box-shadow: 0 0 10px rgba(233, 30, 140, 0.502);
 }
 .volume-slider::-moz-range-thumb {
   width: 12px;
